@@ -1,0 +1,44 @@
+# Docker ignore file for Java Social Media Application
+
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# Build artifacts
+java/socialapp/build/
+java/socialapp/.gradle/
+java/socialapp/out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime
+java/socialapp/sns_api.db
+
+# Documentation
+*.md
+docs/
+
+# Other containerization files
+complete/
+# dotnet/ - Commented out to allow .NET container builds
+javascript/
+python/
+localisation/
+images/
+
+# Test files  
+java/socialapp/src/test/

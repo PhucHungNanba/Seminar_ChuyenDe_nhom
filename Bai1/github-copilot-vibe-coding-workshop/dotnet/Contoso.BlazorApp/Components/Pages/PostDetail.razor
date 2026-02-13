@@ -1,0 +1,177 @@
+@page "/posts/{postId:int}"
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+@inject ILogger<PostDetail> Logger
+
+<PageTitle>@(post?.Content ?? "Loading...") - Simple Social Media</PageTitle>
+
+@if (loading)
+{
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading post...</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="error-container">
+        <div class="error-alert">
+            <span class="error-icon">⚠</span>
+            <span>@errorMessage</span>
+        </div>
+        <button class="btn btn-primary" @onclick="LoadPostAsync">Retry</button>
+        <a href="/" class="btn btn-secondary">Back to Posts</a>
+    </div>
+}
+else if (post != null)
+{
+    <div class="post-detail-container">
+        <div class="back-nav">
+            <a href="/" class="back-link">← Back to All Posts</a>
+        </div>
+
+        <div class="post-detail">
+            <div class="post-header">
+                <div class="post-user">
+                    <span class="username">@@@post.Username</span>
+                    <span class="post-id">Post #@post.Id</span>
+                </div>
+                <div class="post-date">@FormatDate(post.CreatedAt)</div>
+            </div>
+
+            <div class="post-content">
+                @post.Content
+            </div>
+
+            <div class="post-stats">
+                <div class="stat">
+                    <LikeButton PostId="@PostId" LikesCount="@post.LikesCount" OnLikeChanged="OnLikeChangedAsync" />
+                </div>
+                <div class="stat">
+                    <span class="stat-icon">💬</span>
+                    <span>@post.CommentsCount comment@(post.CommentsCount == 1 ? "" : "s")</span>
+                </div>
+            </div>
+
+            @if (post.UpdatedAt != post.CreatedAt)
+            {
+                <div class="post-updated">
+                    <small>Updated: @FormatDate(post.UpdatedAt)</small>
+                </div>
+            }
+        </div>
+
+        <div class="comments-section">
+            <h3>Comments</h3>
+
+            <CommentInput PostId="@PostId" OnCommentAdded="OnCommentAddedAsync" />
+
+            @if (loadingComments)
+            {
+                <div class="loading-comments">
+                    <div class="spinner-small"></div>
+                    <span>Loading comments...</span>
+                </div>
+            }
+            else if (comments.Any())
+            {
+                <div class="comments-list">
+                    @foreach (var comment in comments.OrderBy(c => c.CreatedAt))
+                    {
+                        <CommentItem Comment="comment" PostId="@PostId" OnCommentChanged="OnCommentChangedAsync" />
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-comments">
+                    <p>No comments yet. Be the first to comment!</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int PostId { get; set; }
+
+    private Post? post;
+    private List<Comment> comments = new();
+    private bool loading = true;
+    private bool loadingComments = false;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPostAsync();
+        await LoadCommentsAsync();
+    }
+
+    private async Task LoadPostAsync()
+    {
+        try
+        {
+            loading = true;
+            errorMessage = string.Empty;
+            post = await ApiService.GetPostAsync(PostId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load post {PostId}", PostId);
+            errorMessage = $"Failed to load post {PostId}. Please try again.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadCommentsAsync()
+    {
+        try
+        {
+            loadingComments = true;
+            comments = await ApiService.GetCommentsAsync(PostId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load comments for post {PostId}", PostId);
+        }
+        finally
+        {
+            loadingComments = false;
+        }
+    }
+
+    private async Task OnLikeChangedAsync()
+    {
+        // Refresh post to get updated likes count
+        try
+        {
+            post = await ApiService.GetPostAsync(PostId);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh post after like change");
+        }
+    }
+
+    private async Task OnCommentAddedAsync()
+    {
+        // Refresh comments and post (for comment count)
+        await LoadCommentsAsync();
+        await LoadPostAsync();
+    }
+
+    private async Task OnCommentChangedAsync()
+    {
+        // Refresh comments
+        await LoadCommentsAsync();
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        return date.ToString("MMM d, yyyy h:mm tt");
+    }
+}

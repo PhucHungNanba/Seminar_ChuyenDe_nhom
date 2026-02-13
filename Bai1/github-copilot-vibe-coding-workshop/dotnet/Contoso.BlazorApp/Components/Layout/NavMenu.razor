@@ -1,0 +1,35 @@
+﻿@inject NavigationManager Navigation
+
+<nav class="navigation">
+    <div class="nav-buttons">
+        <a href="/" class="nav-button @GetActiveClass("/")">
+            All Posts
+        </a>
+        
+        <a href="/create" class="nav-button @GetActiveClass("/create")">
+            Create Post
+        </a>
+    </div>
+</nav>
+
+@code {
+    private string GetActiveClass(string path)
+    {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        
+        // Handle root path
+        if (path == "/" && (currentPath == "" || currentPath == "/"))
+        {
+            return "active";
+        }
+        
+        // Handle other paths
+        if (path != "/" && currentPath.StartsWith(path.TrimStart('/'), StringComparison.OrdinalIgnoreCase))
+        {
+            return "active";
+        }
+        
+        return "";
+    }
+}
+
