@@ -1,0 +1,111 @@
+﻿@page "/"
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+@inject ILogger<Home> Logger
+
+<PageTitle>Simple Social Media</PageTitle>
+
+@if (loading)
+{
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading posts...</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="error-container">
+        <div class="error-alert">
+            <span class="error-icon">⚠</span>
+            <span>@errorMessage</span>
+        </div>
+        <button class="btn btn-primary" @onclick="LoadPostsAsync">Retry</button>
+    </div>
+}
+else if (!posts.Any())
+{
+    <div class="empty-container">
+        <p class="empty-message">No posts available</p>
+        <a href="/create" class="btn btn-primary">Create the first post</a>
+    </div>
+}
+else
+{
+    <div class="posts-container">
+        <h2>Recent Posts</h2>
+        
+        <div class="posts-list">
+            @foreach (var post in posts)
+            {
+                <div class="post-card" @onclick="() => NavigateToPost(post.Id)">
+                    <div class="post-header">
+                        <span class="post-username">@@@post.Username</span>
+                        <span class="post-date">@FormatDate(post.CreatedAt)</span>
+                    </div>
+                    
+                    <h3 class="post-title">Post #@post.Id</h3>
+                    
+                    <p class="post-content">@post.Content</p>
+                    
+                    <div class="post-stats">
+                        <div class="stat">
+                            <span class="stat-icon">❤️</span>
+                            <span>@post.LikesCount like@(post.LikesCount == 1 ? "" : "s")</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-icon">💬</span>
+                            <span>@post.CommentsCount comment@(post.CommentsCount == 1 ? "" : "s")</span>
+                        </div>
+                    </div>
+                    
+                    @if (post.UpdatedAt != post.CreatedAt)
+                    {
+                        <div class="post-updated">
+                            <small>Updated: @FormatDate(post.UpdatedAt)</small>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<Post> posts = new();
+    private bool loading = true;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPostsAsync();
+    }
+
+    private async Task LoadPostsAsync()
+    {
+        try
+        {
+            loading = true;
+            errorMessage = string.Empty;
+            posts = await ApiService.GetPostsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load posts");
+            errorMessage = "Failed to load posts. Please try again.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void NavigateToPost(int postId)
+    {
+        Navigation.NavigateTo($"/posts/{postId}");
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        return date.ToString("MMM d, yyyy h:mm tt");
+    }
+}

@@ -1,0 +1,135 @@
+@inject ApiService ApiService
+@inject ILogger<CommentItem> Logger
+
+<div class="comment-item">
+    <div class="comment-header">
+        <span class="comment-username">@@@Comment.Username</span>
+        <span class="comment-date">@FormatDate(Comment.CreatedAt)</span>
+        <div class="comment-actions">
+            @if (!isEditing)
+            {
+                <button class="btn-action" @onclick="StartEditing">Edit</button>
+                <button class="btn-action btn-danger" @onclick="DeleteCommentAsync">Delete</button>
+            }
+        </div>
+    </div>
+
+    @if (isEditing)
+    {
+        <div class="comment-edit-form">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-alert-small">
+                    <span>@errorMessage</span>
+                </div>
+            }
+            
+            <EditForm Model="updateRequest" OnValidSubmit="SaveEditAsync" FormName="@($"EditCommentForm_{Comment.Id}")">
+                <DataAnnotationsValidator />
+                
+                <InputTextArea @bind-Value="updateRequest.Content" class="form-control" rows="3" />
+                <ValidationMessage For="() => updateRequest.Content" />
+                
+                <div class="edit-actions">
+                    <button type="submit" class="btn btn-primary btn-sm" disabled="@isUpdating">
+                        @if (isUpdating)
+                        {
+                            <span class="spinner-small"></span>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save</span>
+                        }
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelEditing">Cancel</button>
+                </div>
+            </EditForm>
+        </div>
+    }
+    else
+    {
+        <div class="comment-content">
+            @Comment.Content
+        </div>
+        
+        @if (Comment.UpdatedAt != Comment.CreatedAt)
+        {
+            <div class="comment-updated">
+                <small>Updated: @FormatDate(Comment.UpdatedAt)</small>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public Comment Comment { get; set; } = new();
+    [Parameter] public int PostId { get; set; }
+    [Parameter] public EventCallback OnCommentChanged { get; set; }
+
+    private bool isEditing = false;
+    private bool isUpdating = false;
+    private string errorMessage = string.Empty;
+    private UpdateCommentRequest updateRequest = new();
+
+    private void StartEditing()
+    {
+        isEditing = true;
+        updateRequest.Content = Comment.Content;
+        errorMessage = string.Empty;
+    }
+
+    private void CancelEditing()
+    {
+        isEditing = false;
+        updateRequest = new();
+        errorMessage = string.Empty;
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (string.IsNullOrWhiteSpace(updateRequest.Content))
+        {
+            errorMessage = "Comment cannot be empty";
+            return;
+        }
+
+        try
+        {
+            isUpdating = true;
+            errorMessage = string.Empty;
+            
+            await ApiService.UpdateCommentAsync(PostId, Comment.Id, updateRequest);
+            
+            isEditing = false;
+            await OnCommentChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to update comment {CommentId}", Comment.Id);
+            errorMessage = "Failed to update comment. Please try again.";
+        }
+        finally
+        {
+            isUpdating = false;
+        }
+    }
+
+    private async Task DeleteCommentAsync()
+    {
+        try
+        {
+            await ApiService.DeleteCommentAsync(PostId, Comment.Id);
+            await OnCommentChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete comment {CommentId}", Comment.Id);
+        }
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        return date.ToString("MMM d, yyyy h:mm tt");
+    }
+}

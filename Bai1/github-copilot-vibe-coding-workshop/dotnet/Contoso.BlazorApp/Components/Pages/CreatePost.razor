@@ -1,0 +1,87 @@
+@page "/create"
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+@inject ILogger<CreatePost> Logger
+
+<PageTitle>Create New Post - Simple Social Media</PageTitle>
+
+<div class="create-post-container">
+    <h2>Create New Post</h2>
+    
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-alert">
+            <span class="error-icon">⚠</span>
+            <span>@errorMessage</span>
+        </div>
+    }
+    
+    <div class="form-container">
+        <EditForm Model="postRequest" OnValidSubmit="HandleSubmitAsync" FormName="CreatePostForm">
+            <DataAnnotationsValidator />
+            
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <InputText @bind-Value="postRequest.Username" id="username" class="form-control" placeholder="Enter your username" />
+                <ValidationMessage For="() => postRequest.Username" />
+            </div>
+            
+            <div class="form-group">
+                <label for="content">Content:</label>
+                <InputTextArea @bind-Value="postRequest.Content" id="content" class="form-control" rows="4" placeholder="What's on your mind?" />
+                <ValidationMessage For="() => postRequest.Content" />
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-small"></span>
+                        <span>Creating...</span>
+                    }
+                    else
+                    {
+                        <span>Create Post</span>
+                    }
+                </button>
+                
+                <a href="/" class="btn btn-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private CreatePostRequest postRequest = new();
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(postRequest.Username) || string.IsNullOrWhiteSpace(postRequest.Content))
+        {
+            errorMessage = "Username and content are required";
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+            errorMessage = string.Empty;
+            
+            await ApiService.CreatePostAsync(postRequest);
+            
+            // Navigate back to posts list
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to create post");
+            errorMessage = "Failed to create post. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
