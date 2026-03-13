@@ -1,9 +1,0 @@
-pandas
-numpy
-openai
-matplotlib
-jupyter
-memory-profiler
-line_profiler
-flask
-pytest
