@@ -7,3 +7,4 @@ memory-profiler
 line_profiler
 flask
 pytest
+gensim
