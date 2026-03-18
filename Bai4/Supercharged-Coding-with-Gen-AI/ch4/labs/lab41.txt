@@ -1,4 +1,0 @@
-Initial prompt:
-How can I commit my files to GitHub from PyCharm terminal?
-
-Improved prompt:
