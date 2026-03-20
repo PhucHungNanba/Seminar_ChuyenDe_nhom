@@ -1,0 +1,36 @@
+====================================================================
+                   NHẬT KÝ LÀM VIỆC - BÀI TẬP 05
+          Chủ đề: Kỹ thuật gợi ý LLM cho lập trình GenAI
+====================================================================
+
+THÔNG TIN SINH VIÊN:
+- Họ và tên: Huỳnh Phúc Hưng
+- Mã số sinh viên: 3122411073
+
+- Khoá học/Môn học: [Seminar Chuyên Đề] (Đại học Sài Gòn)
+- Tên file nộp bài: Bai05_AdvCodingGenAI_HuynhPhucHung_3122411073_Nhom.zip
+
+--------------------------------------------------------------------
+CHI TIẾT QUÁ TRÌNH THỰC HIỆN:
+
+[Ngày 16/03/2026] - Chuẩn bị môi trường & Thực hành Lab Chương 8
+- Phân tích yêu cầu bài tập và clone mã nguồn từ kho `PacktPublishing/Supercharged-Coding-with-Gen-AI`.
+- Tiến hành thực nghiệm Zero-shot và Few-shot prompting với ChatGPT (refactor lệnh print sang log message). Chụp màn hình minh chứng.
+- Thực hành In-context learning bằng GitHub Copilot: Sử dụng file `style_guide.py` để Copilot tự động gợi ý code có Type Hints. 
+- Biên dịch script `openai_fibonacci.py` để hiểu cách truyền Few-shot qua API và tìm hiểu các kỹ thuật Iterative, Template-based, Chain-of-Thought cơ bản.
+
+[Ngày 17/03/2026] - Thực hành Lab Chương 9 (Advanced Prompting)
+- Thực nghiệm Chain-of-Thought (CoT): Dùng hàm main `get_average_return` chứa các lời gọi hàm con để ép Copilot và ChatGPT tự động viết code logic cho các hàm phụ.
+- Áp dụng Prompt Chaining: Chia nhỏ yêu cầu (Thêm Type Hints -> Thêm Google Style Docstring) để tối ưu hóa chất lượng code. Chụp ảnh từng bước.
+- Mô phỏng kỹ thuật Selective History qua API để so sánh độ tiêu hao Token giữa cách gọi Naive (tốn tài nguyên) và Selective (tiết kiệm hơn 75% token).
+
+[Ngày 18/03/2026] - Tổng hợp & Soạn thảo Báo cáo
+- Cấu trúc lại file Word (`.docx`) báo cáo theo chuẩn: Phương pháp luận -> Luận lý -> Minh chứng vật lý.
+- Chèn hình ảnh chụp màn hình vào báo cáo, viết nhận xét và đánh giá chi tiết cho từng bài Lab của Chương 8 và 9.
+- Thiết kế Slide thuyết trình tóm tắt các kỹ thuật quan trọng (Few-shot, CoT, Chaining).
+
+[Ngày 19/03/2026] - Kiểm tra & Đóng gói nộp bài
+- Rà soát lại toàn bộ file code minh họa (các file Python đã chỉnh sửa và chạy thực tế).
+- Soát lỗi chính tả báo cáo Docx và Slide.
+- Hoàn thiện file `nhatky.txt`.
+- Nén tất cả tài liệu (Báo cáo, Code, Nhật ký) vào file ZIP đúng định dạng để nộp bài.
