@@ -24,7 +24,7 @@ curl -X POST http://127.0.0.1:5000/manhattan \
 ### Sample response
 
 >{
-  "distance": 7.0
+  "distance": 6.0
 }
 
 ## Running with Docker
