@@ -1,3 +1,8 @@
+import sys
+import os
+sys.path.append(os.getcwd())
+
+import fibonacci
 import time
 from fibonacci import fibonacci_recursive, fibonacci_iterative
 
