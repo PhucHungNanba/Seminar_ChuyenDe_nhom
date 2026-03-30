@@ -6,7 +6,7 @@ class TestLowercaseRemovePunctNumbers(unittest.TestCase):
     def test_basic_case(self):
         text = "Hello, World! 123"
         result = lowercase_remove_punct_numbers(text)
-        self.assertEqual(result, "hello world")
+        self.assertEqual(result, "hello world ")
 
     def test_with_special_characters(self):
         text = "Python@3.9 is #1!"

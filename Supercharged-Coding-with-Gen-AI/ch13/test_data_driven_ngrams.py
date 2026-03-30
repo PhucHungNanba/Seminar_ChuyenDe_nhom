@@ -17,7 +17,7 @@ class TestLowercaseRemovePunctNumbers(unittest.TestCase):
             ("Python3.8_is#aweSome!", "pythonisawesome"), 
             ("No PUNCTUATION", "no punctuation"), 
             ("MiXeD CaSe &*^%", "mixed case "), 
-            ("newline\nTab\tSpace ", "newline\ttab\tspace "), 
+            ("newline\nTab\tSpace ", "newline\ntab\tspace "), 
         ]
         for input_text, expected in test_cases: 
             with self.subTest(input=input_text): 

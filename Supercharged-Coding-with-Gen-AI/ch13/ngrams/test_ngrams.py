@@ -6,7 +6,7 @@ class TestNgramsFunctions(unittest.TestCase):
     def test_lowercase_remove_punct_numbers(self):
         text = "Hello, World! 123"
         result = lowercase_remove_punct_numbers(text)
-        self.assertEqual(result, "hello world")
+        self.assertEqual(result, "hello world ")
 
     def test_lowercase_remove_punct_numbers_with_supercharte(self):
         text = "Python@3.9 is #1!"
@@ -22,7 +22,7 @@ class TestNgramsFunctions(unittest.TestCase):
         text = "This is a test"
         n = 2
         result = create_ngrams(text, n)
-        expected = ["Th", "hi", "is", " s", "is", " a", "a ", " t", "te", "es", "st"]
+        expected = ["th", "hi", "is", "s ", " i", "is", "s ", " a", "a ", " t", "te", "es", "st"]
         self.assertEqual(result, expected)
 
 
@@ -40,7 +40,7 @@ class TestLowercaseRemovePunctNumbers(unittest.TestCase):
 
     def test_text_with_special_characters(self):
         text = "@#AI&ML* are cool!"
-        expected = "ai ml are cool"
+        expected = "aiml are cool"
         self.assertEqual(lowercase_remove_punct_numbers(text), expected)
 
     def test_empty_string(self):

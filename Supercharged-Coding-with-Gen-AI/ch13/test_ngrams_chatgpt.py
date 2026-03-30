@@ -1,5 +1,6 @@
 import unittest
-from src.ngrams import lowercase_remove_punct_numbers, multiple_to_single_spaces, create_ngrams
+
+from ngrams import create_ngrams, lowercase_remove_punct_numbers, multiple_to_single_spaces
 
 class TestTextUtils(unittest.TestCase):
 
@@ -12,7 +13,7 @@ class TestTextUtils(unittest.TestCase):
     def test_lowercase_remove_punct_numbers_with_symbols(self):
         self.assertEqual(
             lowercase_remove_punct_numbers("Te$ting #punctu@ation &numbers 456"),
-            "testing punctuation numbers "
+            "teting punctuation numbers "
         )
 
     def test_multiple_to_single_spaces_basic(self):
