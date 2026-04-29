@@ -1,20 +1,18 @@
 import { useState } from 'react';
 import { Search, Eye, X, CheckCircle, XCircle, Plus, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
-import { useAdminRxStore } from '../../store/adminRxStore';
+import { useAdminStore } from '../../store/useAdminStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
-  approved: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  APPROVED: 'bg-green-100 text-green-800',
+  REJECTED: 'bg-red-100 text-red-800',
 };
 
 const STATUS_LABELS = {
-  pending: 'Chờ xử lý',
-  processing: 'Đang xử lý',
-  approved: 'Đã báo giá',
-  rejected: 'Đã từ chối',
+  PENDING: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Từ chối',
 };
 
 const MOCK_CATALOG = [
@@ -26,10 +24,10 @@ const MOCK_CATALOG = [
 
 export default function RxApprovalPage() {
   const { 
-    requests, selectedRequest, builderItems, 
+    rxRequests: requests, selectedRequest, builderItems, 
     selectRequest, addBuilderItem, removeBuilderItem, updateBuilderItemQty, 
-    approveRequest, rejectRequest, clearBuilder 
-  } = useAdminRxStore();
+    approveRx, rejectRx, clearBuilder 
+  } = useAdminStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -81,7 +79,7 @@ export default function RxApprovalPage() {
               {filteredRequests.map((req) => (
                 <tr key={req.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
                   <td className="p-4 font-medium text-blue-600">{req.id}</td>
-                  <td className="p-4 text-gray-600">{req.createdAt}</td>
+                  <td className="p-4 text-gray-600">{req.submittedAt}</td>
                   <td className="p-4 text-gray-800">{req.customerPhone}</td>
                   <td className="p-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[req.status]}`}>
@@ -245,13 +243,13 @@ export default function RxApprovalPage() {
                   </div>
                   <div className="flex gap-3">
                     <button 
-                      onClick={() => rejectRequest(selectedRequest.id)}
+                      onClick={() => rejectRx(selectedRequest.id)}
                       className="flex-1 px-4 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors"
                     >
                       Từ chối toa thuốc
                     </button>
                     <button 
-                      onClick={() => approveRequest(selectedRequest.id)}
+                      onClick={() => approveRx(selectedRequest.id)}
                       disabled={builderItems.length === 0}
                       className="flex-1 px-4 py-2.5 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg font-medium transition-colors shadow-sm"
                     >

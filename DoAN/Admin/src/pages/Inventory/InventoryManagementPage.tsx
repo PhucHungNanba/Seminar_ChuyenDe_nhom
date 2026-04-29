@@ -2,21 +2,13 @@ import { useState } from 'react';
 import { Search, Edit2, Filter, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const INVENTORY_DATA = [
-  { id: 'MED-001', name: 'Paracetamol 500mg', total: 1500, q1: 500, q5: 1000 },
-  { id: 'MED-002', name: 'Amoxicillin 250mg', total: 45, q1: 40, q5: 5 },
-  { id: 'MED-003', name: 'Vitamin C 1000mg', total: 8, q1: 0, q5: 8 },
-  { id: 'MED-004', name: 'Lisinopril 10mg', total: 120, q1: 60, q5: 60 },
-  { id: 'MED-005', name: 'Metformin 850mg', total: 300, q1: 150, q5: 150 },
-];
-
-type Branch = 'q1' | 'q5';
+import { useAdminStore, StockLocationType } from '../../store/useAdminStore';
 
 export default function InventoryManagementPage() {
+  const { inventory, updateStock } = useAdminStore();
   const [activeTab, setActiveTab] = useState<'all' | 'branches'>('branches');
   const [searchTerm, setSearchTerm] = useState('');
-  const [inventory, setInventory] = useState(INVENTORY_DATA);
-  const [editingCell, setEditingCell] = useState<{ id: string, branch: Branch } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ id: string, branch: StockLocationType } | null>(null);
   const [editValue, setEditValue] = useState('');
 
   const filteredData = inventory.filter(item => 
@@ -24,7 +16,7 @@ export default function InventoryManagementPage() {
     item.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const startEdit = (id: string, branch: Branch, currentValue: number) => {
+  const startEdit = (id: string, branch: StockLocationType, currentValue: number) => {
     setEditingCell({ id, branch });
     setEditValue(currentValue.toString());
   };
@@ -32,14 +24,7 @@ export default function InventoryManagementPage() {
   const saveEdit = () => {
     if (editingCell) {
       const newValue = parseInt(editValue) || 0;
-      setInventory(prev => prev.map(item => {
-        if (item.id === editingCell.id) {
-          const updatedItem = { ...item, [editingCell.branch]: newValue };
-          updatedItem.total = updatedItem.q1 + updatedItem.q5;
-          return updatedItem;
-        }
-        return item;
-      }));
+      updateStock(editingCell.id, editingCell.branch, newValue);
     }
     setEditingCell(null);
   };
@@ -49,9 +34,9 @@ export default function InventoryManagementPage() {
     if (e.key === 'Escape') setEditingCell(null);
   };
 
-  const StockCell = ({ item, branch }: { item: typeof INVENTORY_DATA[0], branch: Branch }) => {
+  const StockCell = ({ item, branch }: { item: typeof inventory[0], branch: StockLocationType }) => {
     const isEditing = editingCell?.id === item.id && editingCell?.branch === branch;
-    const value = item[branch];
+    const value = item.stockLocations[branch];
     const isWarning = value < 10;
 
     if (isEditing) {
@@ -138,6 +123,7 @@ export default function InventoryManagementPage() {
                   <th className="p-4 font-semibold">Mã Thuốc</th>
                   <th className="p-4 font-semibold">Tên Thuốc</th>
                   <th className="p-4 font-semibold text-center bg-blue-50/50">Tổng Tồn Kho</th>
+                  <th className="p-4 font-semibold text-center border-l border-gray-200">Kho Tổng</th>
                   <th className="p-4 font-semibold text-center border-l border-gray-200">CH Quận 1</th>
                   <th className="p-4 font-semibold text-center border-l border-gray-200">CH Quận 5</th>
                 </tr>
@@ -148,13 +134,16 @@ export default function InventoryManagementPage() {
                     <td className="p-4 font-medium text-gray-500 text-sm">{item.id}</td>
                     <td className="p-4 font-medium text-gray-800">{item.name}</td>
                     <td className="p-4 text-center bg-blue-50/20 font-semibold text-blue-800">
-                      {item.total}
+                      {item.stockLocations['Kho Tổng'] + item.stockLocations['CH Quận 1'] + item.stockLocations['CH Quận 5']}
                     </td>
                     <td className="p-0 text-center border-l border-gray-100 align-middle">
-                      <StockCell item={item} branch="q1" />
+                      <StockCell item={item} branch="Kho Tổng" />
                     </td>
                     <td className="p-0 text-center border-l border-gray-100 align-middle">
-                      <StockCell item={item} branch="q5" />
+                      <StockCell item={item} branch="CH Quận 1" />
+                    </td>
+                    <td className="p-0 text-center border-l border-gray-100 align-middle">
+                      <StockCell item={item} branch="CH Quận 5" />
                     </td>
                   </tr>
                 ))}

@@ -11,22 +11,7 @@ import {
 } from 'recharts';
 import { DollarSign, FileSignature, Package, CheckCircle2, ArrowUpRight, Zap } from 'lucide-react';
 
-const REVENUE_DATA = [
-  { name: 'T2', value: 12000000 },
-  { name: 'T3', value: 19000000 },
-  { name: 'T4', value: 15000000 },
-  { name: 'T5', value: 22000000 },
-  { name: 'T6', value: 28000000 },
-  { name: 'T7', value: 35000000 },
-  { name: 'CN', value: 31000000 },
-];
-
-const MARKET_BASKET_RULES = [
-  { id: 1, if: 'Amoxicillin 500mg', then: 'Men vi sinh Bioflora', confidence: 85, lift: 3.2 },
-  { id: 2, if: 'Máy đo đường huyết', then: 'Que thử đường huyết', confidence: 95, lift: 4.5 },
-  { id: 3, if: 'Panadol Extra', then: 'Vitamin C sủi', confidence: 65, lift: 2.1 },
-  { id: 4, if: 'Khẩu trang y tế', then: 'Nước rửa tay khô', confidence: 72, lift: 2.8 },
-];
+import { revenueData, associationRules } from '../../data/mockAnalytics';
 
 export default function AnalyticsDashboardPage() {
   return (
@@ -69,7 +54,7 @@ export default function AnalyticsDashboardPage() {
           <h3 className="text-lg font-bold text-gray-800 mb-6">Xu hướng Doanh thu (7 ngày qua)</h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
@@ -78,7 +63,7 @@ export default function AnalyticsDashboardPage() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis 
-                  dataKey="name" 
+                  dataKey="date" 
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fill: '#6b7280', fontSize: 12 }} 
@@ -96,7 +81,7 @@ export default function AnalyticsDashboardPage() {
                 />
                 <Area 
                   type="monotone" 
-                  dataKey="value" 
+                  dataKey="amount" 
                   stroke="#2563eb" 
                   strokeWidth={3}
                   fillOpacity={1} 
@@ -118,10 +103,10 @@ export default function AnalyticsDashboardPage() {
           <p className="text-sm text-gray-500 mb-4">Các luật kết hợp phổ biến (Market Basket Analysis) được khai phá từ dữ liệu giao dịch.</p>
           
           <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-            {MARKET_BASKET_RULES.map((rule) => (
-              <div key={rule.id} className="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all group bg-gray-50 hover:bg-white">
+            {associationRules.map((rule, index) => (
+              <div key={index} className="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all group bg-gray-50 hover:bg-white">
                 <div className="text-sm text-gray-800 mb-3 leading-relaxed">
-                  Khi khách mua <span className="font-semibold text-indigo-700">[{rule.if}]</span>, <span className="font-bold text-green-600">{rule.confidence}%</span> khả năng sẽ mua thêm <span className="font-semibold text-indigo-700">[{rule.then}]</span>.
+                  Khi khách mua <span className="font-semibold text-indigo-700">[{rule.antecedent}]</span>, <span className="font-bold text-green-600">{rule.confidence * 100}%</span> khả năng sẽ mua thêm <span className="font-semibold text-indigo-700">[{rule.consequent}]</span>.
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded">Lift: {rule.lift}</span>
