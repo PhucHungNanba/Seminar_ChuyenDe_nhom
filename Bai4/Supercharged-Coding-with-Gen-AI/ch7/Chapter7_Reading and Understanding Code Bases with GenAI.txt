@@ -1,0 +1,380 @@
+﻿7
+Reading and Understanding Code Bases with GenAI
+Writing code is rarely an isolated task. We will typically have to incorporate our Python snippets into a larger code base that includes project files, often structured under a /src folder, along with dependencies listed in a requirements.txt file and other non-project files, such as a Dockerfile that defines container specifications.
+In this chapter, we will work with a code base that computes the Manhattan distance between two matrices represented as pandas DataFrames. With the help of ChatGPT, GitHub Copilot, and OpenAI API, we will explore how various GenAI tools can support us in efficiently understanding both non-project files and the main business logic. We will also examine how generating calls with sample parameters can improve our understanding of more complex code.
+Here are the key topics covered in this chapter:
+• Reading and understanding the code base structure
+• Using LLMs to explain code
+• Interpreting non-project files
+• Creating calls with example parameters
+
+Chapter 7 185
+Technical requirements
+To get the most out of this chapter, ensure you have the following:
+• GitHub Copilot account
+• IDE – either VS Code or PyCharm
+• OpenAI account with access to OpenAI API
+• Access to the book’s repository, available at https://github.com/PacktPublishing/
+Supercharged-Coding-with-Gen-AI
+• Virtual environment set up in VS Code or PyCharm
+• OpenAI API token
+For assistance setting up a GitHub Copilot account, refer to Chapter 3. For instructions on setting up OpenAI API access and token generation, see Chapter 2. If you need help creating an OpenAI account or setting up a virtual environment in your IDE, refer to the Appendix for detailed guidance.
+Reading and understanding the code base structure
+So far in the book, we have mostly explored code snippets that are limited to a single Python file. In this chapter, we will shift our focus and see how GenAI tools can support us in reading and understanding a broader code base.
+Getting to know a code base usually involves reading through a variety of files. For instance, when a developer encounters a new project, they might do the following:
+Explore entry points such as main.py or app.py
+Identify the main project files, often found in a /src directory
+Look for container and dependency management files such as Dockerfile and requirements.txt Experiment with specific parts of the code
+In this book’s repository, we provide a small code base example located under ch7/. Here is a directory tree view of its contents:
+ch7/
+├── app.py
+├── src/
+│   └── manhattan.py
+├── Dockerfile
+├── README.md
+├── requirements.txt
+In this tree view, the core business logic that we will explore next is located in src/manhattan. py. In addition, we have the following:
+app.py, which serves as the entry point and handles basic Hypertext Transfer Protocol (HTTP) POST requests, routing them to the business logic. As introduced in Chapter 2, HTTP POST is a standard method for sending data to a server.
+Dockerfile, a text file that outlines the steps and dependencies needed to build a container image for running the application. We will return to this later in the chapter. 
+requirements.txt, which lists the application’s dependencies, such as pandas and Flask, as in-
+troduced in Chapter 2.
+README.md, a markdown file commonly used to provide documentation about a code base. In our case, it includes examples of how to use the application.
+Next, we will introduce the Manhattan distance, which serves as the core business logic of our application.
+Introducing the Manhattan distance
+In this chapter, our code focuses on calculating the Manhattan distance between two points. This distance is defined as the sum of the absolute differences along each dimension. In two-di- mensional space, we can relate this to classic computer games such as Pacman, where movement is restricted to vertical or horizontal directions, with no diagonal steps allowed. For example, consider Pacman and a ghost positioned in locations (1,1) and (3,2), respectively, in Figure 7.1.
+
+Figure 7.1: Pacman and ghost positions
+In this figure, the characters can move either horizontally or vertically. The Manhattan distance between them is two units along the x axis and one unit along the y axis, which totals 3:
+Manhattan Distance
+A simple Python implementation for calculating this distance might look like this:
+def get_manhattan_distance(
+        x1: Tuple[int, int],
+        x2: Tuple[int, int],
+) -> int:
+    x_dist: int = abs(x1[0] - x2[0])     y_dist: int = abs(x1[1] - x2[1])
+    dist: int = x_dist + y_dist     return dist
+In this implementation, we use two-dimensional vectors represented as  Tuple[int, int] to represent a position on a board. However, the Manhattan distance can be generalized to higher dimensions computed between matrices of floats, as we will see next.
+Manhattan distance for matrices
+The Manhattan distance, also referred to as the L1 norm, extends naturally to higher-dimensional data. It is widely used in image analysis when comparing two images and in machine learning research when evaluating prediction errors.
+To compute the Manhattan distance between matrices, we can use pandas DataFrame objects. pandas is a standard library for data manipulation and should be listed in the book’s requirements. txt file and already installed in your virtual environment.
+Here is an example of a DataFrame with two rows, A and B, and three columns labeled a, b, and c:
+import pandas as pd
+df1: pd.DataFrame = pd.DataFrame(     data={
+        "A": [1, 2, 3],
+        "B": [4, 5, 6],
+    },
+    index=["a", "b", "c"],
+)
+We can implement the Manhattan distance using the pandas methods .abs() for absolute values and .sum() for summing along axes:
+def get_manhattan_distance(
+        df1: pd.DataFrame,
+        df2: pd.DataFrame,
+) -> np.float64:
+    element_wise_dist: pd.DataFrame = (df1 - df2).abs()
+    dist: float = element_wise_dist.sum().sum().astype(float)     return dist
+The distance calculation uses .sum() twice: first to sum across rows, and then again to sum the resulting column totals. We convert the result to a float to standardize the output, since summing over integer values may return a NumPy int64 data type.
+Let’s take these two DataFrames:
+A = [[1 3] [2 4]]
+B = [[5 7] [6 8]]
+Calling get_manhattan_distance on these will return the following:
+|5-1| + |6-2| + |7-3| + |8-4| = 16
+Now that we have a clear understanding of the core business logic and supporting code around the distance computation, we can explore how GitHub Copilot, ChatGPT, and OpenAI API can help us navigate and familiarize ourselves with the code base.
+Using LLMs to explain code
+In Chapter 3, we noted that GitHub Copilot does not include the entire code base in the prompt. This is due to context window limitations, potential cost, and the fact that much of the content may not be relevant to the specific task.
+However, this does not prevent GenAI from helping us understand the code bases we are working with. Rather than relying blindly on Large Language Models (LLMs) to identify key components, we will explore how to request explanations for both simple elements and more complex scenarios.
+Using the /explain command with GitHub Copilot
+GitHub Copilot includes several slash commands, among them the /explain command, which is available in both the inline chat and the chat window. Unlike code completion tasks, the output of this prompt is explanatory text covering arguments, data transformations, and return values.
+The command can be used alone or with extra instructions. For example, in PyCharm, we can ask Copilot to explain the get_manhattan_distance function by placing the cursor anywhere within the function signature, opening the inline chat window, typing /explain, and hitting Enter, as shown in Figure 7.2:
+
+Figure 7.2: Using GitHub Copilot /explain for methods
+Another available option is to select the contents of the function, open a chat window, and type /explain. Note that in VS Code, you will need to choose @workspace/explain by either typing it directly or selecting the /explain @workspace option in the drop-down menu after typing / explain, as shown in Figure 7.3:
+
+Figure 7.3: Choosing @workspace /explain in VS Code chat
+For either IDE, Copilot is likely to yield a general explanation about the purpose of the function, the data transformation, and the returned value, as shown in  Figure 7.4.
+
+Figure 7.4: Sample /explain output in VS Code
+If we wanted a broader analysis of the arguments and their type, for example, we could use this prompt:
+/explain argument types
+This should yield an extended explanation about the arguments, as shown in Figure 7.5.
+
+Figure 7.5: Extended /explain argument types with GitHub Copilot
+· Quick tip: Need to see a high-resolution version of this image? Open this book in the next-gen Packt Reader or view it in the PDF/ePub copy.
+· The next-gen Packt Reader is included for free with the purchase of this book. Scan the QR code OR go to packtpub.com/unlock, then use the search bar to find this book by name. Double-check the edition shown to make sure you get the right one.
+
+Here, we see a detailed explanation of the arguments df1 and df2, including a note that df2 is expected to have the same shape as df1 for the function to work properly. This expectation is not mentioned in the plain /explain prompt, but when we ask about a specific aspect of the code, we get a more in-depth explanation.
+Next, we will see how we can replicate this outcome through direct prompting with ChatGPT and OpenAI API.
+Using ChatGPT to explain code
+While Copilot includes a built-in slash command for code explanations, we can apply the five S’s framework introduced in Chapter 4 to achieve similar results with ChatGPT, even when us- ing older or more cost-effective models such as GPT-4o. Unlike GitHub Copilot, which follows predefined instructions about what to explain based on the Python object, ChatGPT allows us to tailor the explanation to our specific needs.
+For instance, the following prompt focuses on describing the function’s purpose, its arguments and types, the data flow, expected output, and possible edge cases:
+CONTEXT: you are provided with:
+1. A Python function enclosed with {{{ FUNCTION }}}
+2. Explanation points enclosed with {{ HEADERS }}}. TASK: Explain the function using the explanation points. FUNCTION: {{{ ...omitted for brevity ... }}}
+HEADERS: {{{
+1. Function's purpose
+2. Arguments and their types
+3. Step-by-step data flow
+4. Output and its types
+5. Potential edge cases
+}}}
+EXPLANATION:
+When using GPT-4o with this structure, we received an explanation that covered all bullet points with the headers, as partially shown in Figure 7.6:
+
+Figure 7.6: ChatGPT returned extended explanation
+For reference, here is the output generated by ChatGPT under the edge cases header, which adds value by uncovering situations where the function might fail or produce unexpected behavior:
+5. Edge cases
+Shape mismatch: If df1 and df2 do not have the same shape, the subtraction operation will raise a ValueError.
+Non-numeric columns: If the DataFrames contain non-numeric data, the subtraction operation will raise a TypeError or produce NaNs that affect the result.
+Missing values (NaNs): If either DataFrame contains NaNs, the output 
+distance may be NaN unless explicitly handled beforehand.
+Empty DataFrames: If both inputs are empty DataFrames, the result will be 0.0.
+Although writing a prompt for ChatGPT might take slightly more effort compared to using the /explain command, it can be worthwhile when we need more targeted explanations, such as uncovering edge cases.
+Next, we will demonstrate how to achieve this using OpenAI API, which may be more appropri- ate for scenarios where the repository becomes larger and we want to generate explanations for many functions programmatically.
+Using OpenAI API to explain code
+Using the same prompt structure from ChatGPT, we can make a programmatic call to OpenAI, following the best practices introduced in Chapter 5.
+We will define the same system prompt components that mirror our ChatGPT prompt:
+SURROUND = """... omitted for brevity ...""" SINGLE_TASK = "... omitted for brevity..." HEADERS = """...omitted for brevity"""
+We will add a get_user_prompt function that merges the HEADERS prompt piece with the source code of the function:
+def get_user_prompt(func: callable) -> str:
+    return f"""
+    FUNCTION: {{{{{{ {inspect.getsource(func)} }}}}}}     HEADERS: {{{{{{ {POINTS} }}}}}}
+    EXPLANATION:
+    """
+Then, we can call OpenAI API using the gpt-4o-mini model:
+if __name__ == "__main__":
+    client: OpenAI = OpenAI()
+    system_prompt = f"{SURROUND} {SINGLE_TASK}"
+    user_prompt = get_user_prompt(get_manhattan_distance)
+    completion: ChatCompletion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+    print("Explanation:", completion.choices[0].message.content)
+Just as with ChatGPT, we will receive a detailed explanation of the function, covering all points specified. For reference, here is a sample output from running this script:
+Function's purpose: < ... omitted for brevity ... >
+Arguments and their types: The function takes in two arguments:
+* df1: a pandas DataFrame, which represents the first set of data.
+* df2: a pandas DataFrame, which represents the second set of data. Both dataframes are expected to have the same shape and structure for the calculation to be valid.
+Step-by-step data flow: < ... omitted for brevity ... > Potential edge cases:
+* If df1 and df2 have different shapes, the function may raise a value error due to the inability to perform element-wise operations on differently-sized frames.
+* If either of the DataFrames is empty, the function will return a distance of 0.0 as there are no elements to compute differences from.
+* Handling of NaN (Not a Number) values might need to be considered, as this could affect the calculations when present in either of the DataFrames.
+The output here also provides an overview of the edge cases. In later chapters of the book, we will explore how to make use of this when designing a test suite for functions.
+Next, we will explore how to extend the use of the /explain command beyond .py files using various GenAI tools.
+Explaining non-project files
+The /explain command is not limited to .py files or core business logic. For instance, in our Manhattan distance code base, we can use Copilot to interpret an entire non-project file or a specific section of it.
+Explaining an entire file
+There are times when we may want a summary of a complete non-project file. For example, con- sider the requirements.txt file in our project:
+pandas==2.2.3 flask==3.1.0
+To get a general explanation, we can highlight the entire content with the cursor, then open the inline chat or chat window and enter /explain. Figure 7.7 shows an example of this using the chat window in VS Code:
+
+Figure 7.7: Chat window explanation of a full file highlighted content
+In this case, Copilot accurately recognized that requirements.txt lists the dependencies needed for the code base to run properly. For common non-project files, we can generally expect reliable explanations since LLMs have encountered many similar examples during training.
+Next, we will look at how to ask for a more detailed explanation of a specific line within a non-proj- ect file by providing the right context.
+Explaining with context
+While it is useful to understand a file as a whole, there are often specific lines that may be unclear and require a deeper explanation.
+Take the Dockerfile from our Manhattan distance project as an example. Docker is a widely used tool among software developers for packaging applications in a consistent and reproducible way. A key element in this process is the Dockerfile, a plain text file typically placed at the project root that outlines the environment setup. This includes specifying a base image (such as a Python environment), listing dependencies (like the pandas library), and providing commands to build and run the container (such as opening a port to receive HTTP POST requests).
+Below is the Dockerfile we used for our Manhattan distance application:
+FROM python:3.10-slim WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python", "app.py"]
+Copilot can provide an explanation for the entire file, but there are times when we want to focus on a specific line. For instance, we may want to understand the meaning of EXPOSE 5000. Although it might seem like this command publishes port 5000 for incoming requests, it serves as docu- mentation only. The application will still need to explicitly expose this port when launching the container, using a shell command such as docker run -p 5000:5000. When we highlight just this line and request an explanation, Copilot incorporates context from nearby lines, the filename and extension, and other signals to generate a relevant and accurate response, as shown in Figure 7.8:
+
+Figure 7.8: Copilot explanation about exposed port from the Dockerfile
+Copilot correctly identified that the port specification indicates the port on which the application is listening. For common files such as Dockerfile, the plain /explain command usually provides a sufficient one-line explanation.
+Next, we will explore how to get similar explanations in non-project files working with ChatGPT.
+Explaining non-project files with ChatGPT
+When seeking an explanation for a specific line within a non-project file or the entire file itself, the best practice is to provide the full content of the file along with the line in question and the standard filename and extension. In the case of a Dockerfile, there is no extension (such as .txt or .py), so simply specifying Dockerfile is sufficient.
+For instance, if we want to understand the role of an exposed port in a Dockerfile, we should include both the entire file contents and the specific line to get a more accurate explanation, as demonstrated in the following prompt:
+CONTEXT: you are provided with:
+1. A Dockerfile enclosed with {{{ DOCKERFILE }}}
+2. A line from the file enclosed with {{{ LINE }}}. TASK: Explain the purpose of the line.
+DOCKERFILE: {{{ ...omitted for brevity... }}} LINE: {{{EXPOSE 5000}}}
+EXPLANATION:
+This prompt effectively identifies the function of the line in the Dockerfile, as shown in Figure 7.9:
+
+Figure 7.9: Expose 5000 line explanation in ChatGPT
+In general, when using ChatGPT to explain a line of code or a line from a non-project file, it is helpful to include a broader context than just the target line. For example, when explaining a method within a class, include the entire class definition. If a function uses a custom argument type, include the definition of that type as well. This leads to more precise and useful explana- tions. Later in the chapter, we will introduce debugging strategies for complex scenarios where 
+a simple textual explanation does not provide sufficient insight into the purpose of a code block.
+Next, we will explore how to use a similar approach when working with OpenAI API.
+Explaining non-project files with OpenAI API
+Similar to ChatGPT, we can use OpenAI API to explain specific lines from non-project files. Let us revisit the Dockerfile example and apply a comparable system prompt:
+SURROUND = """you are provided with:
+1. A Dockerfile enclosed with {{{ DOCKERFILE }}}
+2. A line from the file enclosed with {{{ LINE }}}.""" SINGLE_TASK = "Your task is to explain the purpose of the line."
+Unlike earlier examples where we passed a function’s source code to OpenAI API, this time we want to send the entire Dockerfile content. We can do this by using Python’s built-in open function inside the get_user_prompt function:
+def get_user_prompt(path: str, line: str) -> str:     with open(path, 'r') as file:
+        dockerfile_content = file.read()
+    return f"""
+    DOCKERFILE: {{{{{{ {dockerfile_content} }}}}}}     LINE: {{{{{{ {line} }}}}}}
+    EXPLANATION:
+    """
+We can then call OpenAI API using the following code:
+if __name__ == "__main__":
+    client: OpenAI = OpenAI()
+    system_prompt = f"{SURROUND} {SINGLE_TASK}"     user_prompt = get_user_prompt( '../../ch7/Dockerfile', 'EXPOSE 5000')
+    completion: ChatCompletion = client.chat.completions.create(         model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+    print("Explanation:", completion.choices[0].message.content)
+For reference, running this script produced the expected result, identifying the line’s purpose as specifying the port to be exposed. Here is an example output:
+Explanation: The line `EXPOSE 5000` in the Dockerfile serves to inform Docker that the application running inside the container will be listening for incoming network connections on port 5000.
+When a container is created from this Docker image, port 5000 will be exposed for external communications, making it possible for users or other applications to connect to the service provided by the application running in the container. However, it is important to note that this command does not actually publish the port; to make the port accessible from outside the Docker environment, the user must explicitly map it to a port on the host machine when running the container, typically using the `-p` option with the `docker run` command.
+In summary, `EXPOSE 5000` is a documentation feature that indicates the intended service port and enhances the understandability of the Docker container's purpose.
+To conclude, both ChatGPT and OpenAI API can deliver accurate results even when using smaller models such as GPT-4o, if we supply the necessary context, including the filename and extension if it exists, its contents, and the specific line we want explained.
+GitHub Copilot is best suited for quick, informal explanations. For more control over the prompt and instructions, ChatGPT is a better fit. When a programmatic solution is required, OpenAI API becomes the preferred choice.
+Next, we will explore how to harness the power of GenAI to handle more advanced cases where a simple explanation is not enough, and interaction with the object is required for deeper un- derstanding.
+Creating calls with example parameters
+As our Python objects or non-project files become more complex, a straightforward explanation might not be enough to help us understand the code in front of us. This is especially true when the Python object is part of a class, lacks type hints in its signature, contains no docstring, and strays from best practices.
+Take, for instance, the private method _constructor_from_mgr in the widely used pandas DataFrame class. This method constructs a DataFrame from a set of data blocks and their as- sociated axes. For your reference, here is the source code, which lacks argument type hints, a docstring, or any reference to tests:
+def _constructor_from_mgr(self, mgr, axes) -> DataFrame:     df = DataFrame._from_mgr(mgr, axes=axes)
+    if type(self) is DataFrame:
+# This would also work `if self._constructor is DataFrame`, but
+# this check is slightly faster, benefiting the most-common case.
+        return df
+    elif type(self).__name__ == "GeoDataFrame":
+# Shim until geopandas can override their _constructor_from_mgr
+# bc they have different behavior for Managers than for 
+DataFrames
+        return self._constructor(mgr)
+# We assume that the subclass __init__ knows how to handle a
+# pd.DataFrame object.
+    return self._constructor(df)
+One issue here is the naming of the first argument. Although it is called manager, a name typically associated with the _mgr property of a DataFrame, it refers to a block of data, which is essentially the cell content without axis labels. This misleading name, combined with the absence of type hints, a docstring, or proper testing, makes the code block hard to understand for both humans and GenAI applications.
+For reference, here is the explanation output from Copilot when prompting /explain from a PyCharm inline chat:
+The _constructor_from_mgr method is a helper function in the DataFrame class. It is used to create a new DataFrame instance from a given BlockManager (or ArrayManager) and its associated axes.
+Key Points:
+1. Parameters:
+mgr: The BlockManager or ArrayManager that holds the actual data for the DataFrame.
+axes: The axes (index and columns) for the new DataFrame.
+2. Return Value:
+It returns a new DataFrame object constructed from the provided manager and axes.
+Example Snippet:
+def _constructor_from_mgr(self, mgr, axes) -> DataFrame:     df = DataFrame._from_mgr(mgr, axes=axes)
+Here, _from_mgr is a class method that initializes a DataFrame from the given manager and axes. This method ensures that the new DataFrame is properly aligned with the provided data structure.
+This output includes all the elements we are looking for, such as arguments, the return value, and some level of data transformation. However, deciphering the explanation can be just as challenging as deciphering the code itself. We propose a better approach by debugging the code using the generated content.
+Debugging with GitHub Copilot
+Copilot is built for code generation, which makes it useful for interacting with our Python code. If we take the get_manhattan_distance function as an example, prompting Copilot with a partial call to the function can result in a completion that includes example arguments.
+We can do this by writing the function call directly:
+get_manhattan_distance(
+Or, we can do it by assigning the result to a variable with a matching type hint for the function’s return value:
+d: float = get_manhattan_distance(
+In both cases, Copilot is expected to generate two DataFrame arguments for the function. An example of this kind of completion in PyCharm is shown in Figure 7.10:
+
+Figure 7.10: Sample call completed by GitHub Copilot
+Keep in mind that if your IDE automatically inserts a closing bracket, ), after you type the opening one, (, you may need to press Enter to activate Copilot’s suggestion.
+This generated completion can serve as an entry point for interacting with the function through the debugger. In PyCharm, we can initiate debug mode by right-clicking the filename and selecting Debug, as illustrated in Figure 7.11:
+
+Figure 7.11: Debug mode in PyCharm
+In VS Code, debugging is done by clicking the play icon in the top-right corner and selecting Python Debugger: Debug Python File, as shown in Figure 7.12:
+
+Figure 7.12: Running the Debugger in VS Code
+Running the file in debug mode allows us to step through the code line by line, offering a clearer under- standing of its internal workings. For example, when using PyCharm’s debugger, we can inspect the variables within the function and follow the data transformation as it happens, as seen in Figure 7.13:
+
+Figure 7.13: Debug mode in PyCharm showing internal function arguments This gives us visibility into the intermediate values within get_manhattan_distance.
+The authors frequently rely on debugging to interact with the code they read and write. This hands-on approach supports faster development of intended functionality and offers deeper insights into complex code logic. This far exceeds reading source code, using GenAI explanations, or consulting docstrings.
+Next, we will explore how generating sample calls can help us better understand complex code blocks, such as the _constructor_from_mgr method in the pandas DataFrame class.
+Debugging dependency code
+Just like with the get_manhattan_distance case, we can use Copilot to help generate sample code for debugging the _constructor_from_mgr method. Since this is a class method, we will split our prompt into two parts. The first prompt generates a sample instance of the class, and the second invokes the method.
+We will begin by asking Copilot to complete a DataFrame instance. A sample prompt may look like this:
+coordinates_a : pd.DataFrame =
+This prompt offers sufficient context for Copilot to suggest an assignment. As shown in Figure 7.14, Copilot begins by proposing an initial completion for a pd.DataFrame.
+
+Figure 7.14: Initial completion in PyCharm
+When we accept the suggestion, Copilot typically proposes sample data that fits the DataFrame’s name, as illustrated in Figure 7.15:
+
+Figure 7.15: Chained completion in PyCharm
+At this point, we can either trigger additional columns by accepting chained suggestions or type } to flag to Copilot that we do not want any additional columns. We then move on to the method call with the following prompt:
+coordinates_a._constructor_from_mgr(
+Note that your IDE may automatically complete the closing bracket, ). In that case, press Enter between the brackets to let Copilot generate a completion suggestion.
+For example, in Figure 7.16, Copilot proposes using the coordinates_a._mgr and coordinates_a. axes properties as the calling parameters.
+
+Figure 7.16: Parameter completion
+With the two proposed parameters, we can debug the method as shown in Figure 7.17 and gain a better understanding of its behavior.
+
+Figure 7.17: Debugging _constructor_from_mgr using Copilot’s suggestion
+To conclude, Copilot can supercharge the process of debugging sections of the code base, allowing us to better understand both simple and complex implementations. We rely heavily on debugging as a daily practice to deepen their understanding of the code they interact with.
+Next, we will explore how ChatGPT and OpenAI API offer distinct characteristics that we can utilize.
+Customizing call parameters with ChatGPT and OpenAI
+GitHub Copilot is generally better suited for quickly generating debugging calls to trigger Python objects, as it can access relevant context, such as the class code, when we are working with a method. For cases where we want specific characteristics of the sample parameters, prompting ChatGPT and OpenAI may be more suitable.
+For example, to generate suitable arguments for debugging the get_manhattan_distance function, we might want five rows and three columns, and can use the following prompt:
+CONTEXT: you are provided with:
+1. A Python function enclosed with {{{ FUNCTION }}}
+2. Arguments requirements enclosed with {{ REQUIREMENTS }}}. TASK: Call the function with the data requirements FUNCTION: {{{ ... omitted for brevity ... }}}
+REQUIREMENTS: {{{
+1. 5 rows
+2. 3 columns
+3. floats and integers in cells
+}}}
+CALL:
+For reference, the output is shown in Figure 7.18:
+
+Figure 7.18: Call parameters for get_manhattan_distance
+In this example, both DataFrames, df1 and df2, have the same shape of five rows and three col- umns, which makes them appropriate arguments for the function call.
+The OpenAI API call is similar, and you can find the full script at ch7/prompts/openai_debug. py for later reference.
+To conclude, we turn to ChatGPT and OpenAI API when our data requirements are beyond trivial for a quick completion that Copilot might otherwise handle well. Later in the book, we will explore how to build on these data generation methods to create a robust test suite.
+Debugging dependency code
+When using ChatGPT or OpenAI API to generate test code for a dependency package, it is import- ant to provide enough context for the model to produce a desirable call. The amount of context required depends on how widely the library is used. For standard packages such as pandas, in- cluding just the relevant method may be enough. For custom or private repository classes, it is usually best to include the entire class definition.
+For example, the DataFrame class in pandas is about 12,000 lines long, which is too much to include in a prompt. However, because pandas is highly popular, we can provide only the _constructor_ from_mgr method and still receive a relevant response.
+Below is a sample prompt used with ChatGPT to generate a call to the _constructor_from_mgr method:
+CONTEXT: Given Pandas DataFrame 2.2.3 class, you are provided with:
+1. Pandas DataFrame method to be called enclosed with {{{ FUNCTION }}}
+2. Arguments requirements enclosed with {{ REQUIREMENTS }}}.
+TASK: Generate a method call with sample parameters that meet the data requirements.
+FUNCTION: {{{ ... omitted for brevity ... }}} REQUIREMENTS: {{{
+1. 5 rows
+2. 3 columns
+3. floats and integers in cells
+}}}
+CALL:
+Figure 7.19 shows an example output from GPT-4o in response to this prompt.
+
+Figure 7.19: Sample test call to _constructor_from_mgr
+Here, ChatGPT successfully generated a method call using df._mgr and df.axes, producing a DataFrame with the required dimensions.
+Since OpenAI API follows a similar pattern, we have provided the full script in ch7/prompts/
+openai_debug_pandas.py for reference.
+In later chapters, we will build on this approach to supercharge the generation of robust test suites.
+Putting it all together
+Now that we have reviewed different approaches to shorter objects, explored tailored explanations for Python objects and non-project files, considered programmatic concerns, and looked at scenarios where a textual explanation is not sufficient, we can summarize everything in a pros and cons table for each of the tools:
+ 
+ GenAI app             Pros                                              Cons
+ GitHub Copilot        Provides quick responses with relevant context.   Does not support tailored explanations,
+                        It supports the use                               such as when we need to include edge
+                                                                          cases for
+                       of /explain as is and allows us to add additional  get_manhattan_distance.
+                        requirements.
+ ChatGPT               Enables tailored explanations and gives us        Requires more effort to craft prompts.
+                        flexibility to add or remove
+                        context.
+ OpenAI API            Suitable for programmatic solutions and           Significantly more effort compared to
+                        automation.                                       GitHub Copilot and
+                                                                          ChatGPT.
+In our own work, we typically begin with Copilot when we need an explanation. As our require- ments expand, we move to Copilot’s chat window, ChatGPT, or OpenAI API. When dealing with more complex objects, we always recommend incorporating debugging into the reading process to better understand the code.
+Summary
+In this chapter, we expanded our focus beyond .py files and explored how GenAI can help us un- derstand entire code bases. Using GitHub Copilot, we applied the /explain command in its plain form as well as with more tailored instructions to grasp the role of the get_manhattan_distance function. We also applied this command to understand non-project files such as requirements. txt and Dockerfile.
+Next, we used ChatGPT to craft prompts that offered useful explanations about edge cases and argument types. We then moved on to OpenAI API to generate a script that programmatically provided multiple explanations with one call.
+We concluded by generating sample values that are useful for interacting with our code through the debugger. This approach is especially helpful when dealing with more complex implemen- tations.
+In the next chapter, we will dive into prompt engineering techniques to improve the quality of our generated code. Through few-shot learning, also known as in-context learning, we will guide Copilot, ChatGPT, and OpenAI API to follow a specific style guide aligned with our production standards. We will also explore additional techniques to shape prompts for better outcomes.
+Quiz time
+Before you proceed to the next chapter, make sure that you can confidently answer the following questions:
+Question 1: How can we address explanations of complex Python objects?
+Answer: In cases where the object is relatively simple, we can utilize the GitHub Copilot /explain slash command to help us better grasp the arguments, data transformation, and return values. For more complex objects, we can use debugging by generating calls to the object with GitHub Copilot, ChatGPT, and OpenAI API.
+Question 2: When asking ChatGPT to explain a single line in a Dockerfile, what context should be added?
+Answer: It is recommended to include the full contents of the Dockerfile along with the filename and extension, and the specific line in question. This gives ChatGPT the context needed for a more accurate explanation.
+Further reading
+To learn more about the topics that were covered in this chapter, look at the following resources:
+• Dockerfile, Wikipedia: https://realpython.com/primer-on-python-decorators/
+• PyCharm debugging: https://www.jetbrains.com/help/pycharm/part-1-debugging-
+python-code.html#step
+• VS Code debugging: https://code.visualstudio.com/docs/python/debugging
+Unlock this book’s exclusive  benefits now 
+Scan this QR code or go to packtpub.com/ unlock, then search for this book by name. 
+Note: Keep your purchase invoice ready before  you start.
