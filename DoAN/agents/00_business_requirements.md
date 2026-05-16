@@ -1,64 +1,78 @@
-# 00_business_requirements.md (Hiến pháp Nghiệp vụ - PRD v2.0)
+# 00_business_requirements.md (Hiến pháp Nghiệp vụ - PRD v2.1)
 
-## 1. 🌐 Phân vùng Hệ thống & Điểm Truy cập (Portals)
-Hệ thống được chia làm 2 ứng dụng (phân vùng) độc lập về mặt giao diện, dùng chung 1 backend:
-- **Storefront (Web Khách hàng - pharma.com)**: Nơi khách hàng vãng lai và thành viên truy cập.
-- **Admin Portal (Web Quản trị - pharma.com/admin)**: Khu vực đóng, bắt buộc phải có tài khoản nội bộ (Dược sĩ/Quản trị viên) mới được truy cập.
+## 1. 🏗️ Kiến trúc & Ngôn ngữ (Tech Stack Guidance)
 
-## 2. 🔐 Ma trận Phân quyền (RBAC Matrix)
+> **Lưu ý cho AI**: Ưu tiên sử dụng stack React (Vite) + Node.js (Express/NestJS) + MongoDB Atlast. Code theo phong cách Modular Monolith hoặc Clean Architecture để dễ dàng tách microservices sau này.
 
-| Vai trò (Actor) | Cổng đăng nhập | Quyền hạn (Permissions) | Giới hạn (Restrictions) |
+- **Frontend**: Tailwind CSS + Lucide Icons.
+- **State Management**: Ưu tiên Zustand hoặc React Context.
+- **Authentication**: JWT (JSON Web Token) lưu tại HttpOnly Cookie.
+
+## 2. 🌐 Phân vùng Hệ thống (Portals)
+
+Hệ thống gồm 2 ứng dụng web chia sẻ cùng một tài nguyên hình ảnh và Database:
+
+- **Storefront (Client)**: `D:\Seminar_git\Seminar_ChuyenDe_nhom\DoAN\Frontend/`. Tập trung vào trải nghiệm mua hàng nhanh và tin cậy.
+- **Admin Portal (Back-office)**: `D:\Seminar_git\Seminar_ChuyenDe_nhom\DoAN\Admin`. Tập trung vào quản lý dữ liệu và xử lý nghiệp vụ dược.
+
+## 3. 🔐 Ma trận Phân quyền & Bảo mật (RBAC & Security)
+
+| Vai trò (Actor) | Portal | Quyền hạn đặc trưng | Ràng buộc bảo mật |
 | --- | --- | --- | --- |
-| **Khách hàng** | Storefront | Tạo đơn, Upload toa thuốc, Xem lịch sử cá nhân. | Không thể truy cập `/admin`. |
-| **Dược sĩ** | Admin Portal | Đọc toa thuốc khách gửi, Tạo báo giá (Quote), Cập nhật trạng thái đơn hàng. | KHÔNG xem được Báo cáo doanh thu, KHÔNG quản lý được tài khoản nhân sự. |
-| **Quản trị viên** | Admin Portal | Toàn quyền. Xem Dashboard tài chính, Quản lý Tồn kho đa điểm, Phân quyền nhân viên. | (Không có giới hạn nội bộ) |
+| **Khách hàng** | Storefront | Upload Rx (Toa thuốc), Thanh toán đơn hàng. | Không thể xem API của `/admin/*`. |
+| **Dược sĩ** | Admin | Soạn báo giá, Duyệt toa thuốc, Kiểm kho. | Không có quyền xóa sản phẩm hoặc xem doanh thu tổng. |
+| **Admin** | Admin | Quản lý nhân sự, Cấu hình hệ thống, AI Analytics. | Yêu cầu 2FA (Mô phỏng) cho các thao tác nhạy cảm. |
 
-## 3. 📖 User Stories Chi Tiết (Bao gồm Hành vi & Phản hồi Hệ thống)
-> **Lưu ý cho AI Agent**: Khi implement các chức năng dưới đây, bắt buộc tuân thủ đúng Cổng truy cập và System Response đã mô tả.
+## 4. 🔄 State Machine: Luồng Đơn hàng (Order Statuses)
 
-### Epic 1: Xác thực & Điều hướng (Authentication & Routing)
-**US1.1 - Đăng nhập Khách hàng:**
-- **Actor & Portal**: Khách hàng tại Storefront.
-- **Hành động**: Nhập SĐT và OTP (Mô phỏng) tại trang chủ.
-- **System Response**: Trả về token, đổi trạng thái UI sang "Đã đăng nhập", giữ người dùng lại trang hiện tại (không redirect đi đâu).
+> **AI Agent cần tuân thủ nghiêm ngặt các trạng thái này khi viết Logic Backend:**
 
-**US1.2 - Đăng nhập Nội bộ (Nhân viên):**
-- **Actor & Portal**: Dược sĩ / Admin tại Admin Portal (`/admin`).
-- **Hành động**: Nhập Email nội bộ và Password.
-- **System Response**:
-  - Hệ thống kiểm tra role trong token.
-  - Nếu là Role `Pharmacist` -> Redirect về `/admin/rx-approval` (Trang duyệt đơn). Ẩn menu Báo cáo.
-  - Nếu là Role `Admin` -> Redirect về `/admin/dashboard` (Trang tổng quan doanh thu). Hiển thị full menu.
+- **`DRAFT_RX`**: Khách đã gửi ảnh toa thuốc, chờ Dược sĩ.
+- **`QUOTED`**: Dược sĩ đã nhặt thuốc và gửi giá cho khách.
+- **`PENDING_PAYMENT`**: Khách đã xác nhận báo giá, chờ thanh toán.
+- **`PROCESSING`**: Đã thanh toán, đang đóng gói tại kho.
+- **`SHIPPING`**: Đơn vị vận chuyển đã lấy hàng.
+- **`COMPLETED`**: Giao hàng thành công.
+- **`CANCELLED`**: Đơn bị hủy (kèm lý do: Toa không hợp lệ, Hết hàng, Khách hủy).
 
-### Epic 2: Luồng Kê Đơn Mở (Open Prescription Flow - Critical O2O)
-**US2.1 - Gửi yêu cầu mua theo toa:**
-- **Actor & Portal**: Khách hàng tại Storefront.
-- **Hành động**: Bấm "Gửi toa thuốc" -> Upload ảnh chụp -> Điền SĐT -> Bấm "Gửi yêu cầu".
-- **System Response**: Lưu DB với status: `DRAFT_RX`. Hiển thị màn hình Success: "Dược sĩ đang kiểm tra toa thuốc, vui lòng đợi tin nhắn xác nhận".
+## 5. 📖 User Stories & Logic Chi Tiết (Nâng cao)
 
-**US2.2 - Nhận diện và Xử lý toa thuốc (Split-screen):**
-- **Actor & Portal**: Dược sĩ tại Admin Portal.
-- **Hành động**: Truy cập tab "Chờ duyệt", bấm vào ticket `DRAFT_RX` mới nhất. Nhìn ảnh toa thuốc bên trái, dùng thanh search bên phải tìm thuốc trong kho và thêm vào giỏ. Bấm "Gửi báo giá".
-- **System Response**: Update ticket thành status: `PENDING_PAYMENT`. Hệ thống tự động đẩy một thông báo (Notification) sang tài khoản của Khách hàng trên Storefront.
+### Epic 1: Xác thực & Bảo mật
 
-**US2.3 - Khách hàng chốt đơn & Thanh toán:**
-- **Actor & Portal**: Khách hàng tại Storefront.
-- **Hành động**: Bấm vào thông báo "Toa thuốc đã được báo giá", xem lại danh sách thuốc Dược sĩ đã nhặt và tổng tiền. Bấm "Thanh toán".
-- **System Response**: Khởi tạo luồng Checkout, trừ Tồn kho (Inventory), cộng Điểm thưởng (PharmaPoints), chuyển trạng thái đơn thành `PROCESSING`.
+**US1.1 (OTP Simulation):**
+- Tại Storefront, khi khách nhập SĐT, Backend trả về mã `123456` trong payload API (để dễ test).
+- Frontend hiển thị thông báo "Mã OTP đã gửi (Test: 123456)".
 
-### Epic 3: Giao dịch thông thường & Ràng buộc (Standard Cart & Constraints)
-**US3.1 - Chặn thanh toán thuốc Rx:**
-- **Actor & Portal**: Khách hàng tại Storefront.
-- **Hành động**: Bỏ một thuốc có nhãn `Rx` vào giỏ hàng và bấm "Thanh toán" ngay lập tức mà không up ảnh toa thuốc hợp lệ.
-- **System Response**: Backend từ chối request. Frontend hiển thị Modal báo lỗi màu đỏ: "Vui lòng đính kèm ảnh toa thuốc cho các sản phẩm Kê đơn (Rx) trước khi tiếp tục", đồng thời disable nút Thanh toán.
+**US1.2 (Role-based Routing):**
+- Hệ thống phải có Middleware kiểm tra role từ Token.
+- Nếu ngưới dùng cố tình truy cập `/admin` bằng tài khoản Customer, trả về lỗi 403 và redirect về trang chủ.
 
-### Epic 4: Quản trị Vận hành & Dữ liệu (Admin Operations)
-**US4.1 - Quản lý tồn kho đa điểm:**
-- **Actor & Portal**: Quản trị viên tại Admin Portal.
-- **Hành động**: Truy cập bảng "Tồn kho", sửa trực tiếp (inline edit) số lượng thuốc Amoxicillin tại chi nhánh "Quận 1" từ 10 thành 0.
-- **System Response**: Lưu DB. Khi Khách hàng ở Storefront tìm thuốc Amoxicillin, hệ thống tự động hiển thị "Hết hàng tại Quận 1 - Chuyển giao từ Kho Tổng".
+### Epic 2: Luồng Toa thuốc (Prescription Workflow)
 
-**US4.2 - Khai phá dữ liệu (Data Mining):**
-- **Actor & Portal**: Quản trị viên tại Admin Portal.
-- **Hành động**: Truy cập tab "Phân tích AI".
-- **System Response**: Hệ thống query dữ liệu hóa đơn, chạy thuật toán (mô phỏng) và hiển thị biểu đồ danh sách các quy tắc kết hợp (VD: Mua Thuốc Ho -> 80% mua kèm Kẹo ngậm). Cung cấp nút "Kích hoạt luật này lên Storefront".
+**US2.1 (Upload & OCR Mock):**
+- Khi khách upload ảnh, hệ thống lưu ảnh vào folder `/uploads`.
+- Hiển thị trạng thái "Đang xử lý AI" (mô phỏng 2 giây) trước khi chuyển trạng thái sang `DRAFT_RX`.
+
+**US2.2 (Split-screen Admin):**
+- Giao diện Dược sĩ duyệt đơn phải là dạng 2 cột:
+  - **Trái**: Ảnh toa thuốc (có khả năng zoom/xoay).
+  - **Phải**: Form tìm kiếm thuốc trong Database + Nút "Thêm vào báo giá".
+
+**US2.3 (Báo giá & Khớp tồn kho):**
+- Khi Dược sĩ thêm thuốc vào báo giá, hệ thống phải check tồn kho (`stock_quantity`).
+- Nếu `stock < requested`, hiển thị cảnh báo vàng nhưng vẫn cho phép báo giá (để nhập hàng sau).
+
+### Epic 3: Ràng buộc thuốc Kê đơn (Rx Constraints)
+
+> **Quy tắc cứng:** Bất kỳ sản phẩm nào có flag `is_prescription: true` trong DB thì:
+
+- Không thể bấm nút "Thanh toán ngay" từ Giỏ hàng.
+- Bắt buộc phải thông qua luồng "Gửi toa thuốc" ở Epic 2.
+- Nếu trong giỏ hàng có cả thuốc thường và thuốc Rx, hệ thống yêu cầu tách đơn hoặc yêu cầu toa thuốc cho toàn bộ giỏ hàng.
+
+## 6. 🛠️ Ràng buộc Kỹ thuật & Giả định (Global Rules)
+
+- **Dữ liệu hình ảnh**: Sử dụng cloudinary để lưu ảnh sản phẩm và toa thuốc. 
+- **Thanh toán**: Chỉ implement phương thức COD (Thanh toán khi nhận hàng) và Mô phỏng chuyển khoản (Hiển thị QR Code tĩnh).
+- **Thông báo (Notifications)**: Sử dụng luồng Long Polling hoặc đơn giản là hiển thị thông báo khi ngưới dùng F5 trang (Mô phỏng Realtime).
+- **AI Consultant**: nhận vào ID đơn hàng và trả về chuỗi text gợi ý (VD: "Khách hàng này thường mua Vitamin C kèm với thuốc cảm").

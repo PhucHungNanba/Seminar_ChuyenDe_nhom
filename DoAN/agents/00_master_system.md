@@ -1,23 +1,69 @@
-# 00_master_system (Hiến pháp Kỹ thuật)
+# 00_master_system.md (Hiến pháp Kỹ thuật v2.0)
 
-## 🎯 Nhiệm vụ
-Định nghĩa "luật chơi" về công nghệ cho toàn dự án. Bất kể Agent nào thực thi (Frontend hay Backend), luôn phải nạp tài liệu này vào ngữ cảnh đầu tiên.
+## 🎯 1. Chiến lược "Vibe Coding"
 
-## 🛠️ Tech Stack
-- **Frontend**: React (Vite), Tailwind CSS, Zustand.
-- **Backend**: Node.js, Express.js.
-- **Database**: MongoDB (Mongoose).
-- **Deployment & Automation**: Docker, docker-compose, n8n.
+**Nguyên tắc:** AI ưu tiên viết code chạy được ngay (Functional code), giao diện đẹp (Aesthetic UI) và hạn chế các thư viện bên thứ 3 quá phức tạp.
 
-## 🎨 Phong cách Code (Vibe Long Châu)
-- Giao diện phải chuyên nghiệp, đáng tin cậy, lấy cảm hứng từ nhà thuốc Long Châu (màu sắc chủ đạo: Xanh navy/Trắng/Xám, typography rõ ràng).
-- Code sạch, chia component nhỏ gọn, có khả năng tái sử dụng cao.
-- UX/UI tập trung vào sự mượt mà và thân thiện với người dùng.
+- **Ngôn ngữ:** Comment trong code sử dụng Tiếng Việt để dễ bảo trì. Tên biến/hàm sử dụng Tiếng Anh.
+- **Tính nhất quán:** Mọi Agent khi sinh code mới phải kiểm tra các file đã tồn tại để đảm bảo không viết lại logic đã có.
 
-## 📂 Quy chuẩn & Cấu trúc
-- **Tên file/thư mục**: Nhất quán, dễ đọc.
-- **Cấu trúc thư mục**: Phân tách rõ ràng giữa `Frontend` (Storefront), `Admin` (Back-office) và `Backend` (API).
+## 🛠️ 2. Tech Stack Chi tiết
 
-## 🚧 Giới hạn Dự án (MVP)
-- **Ưu tiên**: Tập trung vào UI/UX cốt lõi cho luồng mua hàng và xử lý đơn thuốc.
-- **Mô phỏng**: Các tính năng thanh toán thực tế và ràng buộc pháp lý phức tạp sẽ được mô phỏng hoặc làm mộc (mocked) trong phiên bản MVP này để đảm bảo tiến độ dự án.
+**Frontend (Storefront & Admin):**
+- **Framework:** React.js (Vite).
+- **Styling:** Tailwind CSS (Config màu sắc theo hệ nhận diện Long Châu).
+- **State:** Zustand (để quản lý Giỏ hàng và Auth nhanh gọn).
+- **Icons:** lucide-react.
+
+**Backend (API Central):**
+- **Runtime:** Node.js (Express.js).
+- **Database:** MongoDB với Mongoose (Schema-based).
+- **Auth:** JWT (JSON Web Token).
+
+**Automation:**
+- **n8n** (Xử lý các tác vụ ngầm như gửi mail, báo cáo hoặc tích hợp AI Consultant).
+
+## 📂 3. Bản đồ Thư mục (Project Map)
+
+> **AI Agent phải tuân thủ đúng cấu trúc này khi tạo file mới:**
+
+```
+/DOAN
+├── /backend            # Node.js Express API
+│   ├── /models         # Mongoose Schemas
+│   ├── /routes         # API Endpoints
+│   ├── /controllers    # Logic xử lý
+│   └── /middleware     # Auth & Error handling
+├── /frontend           # React Vite (Khách hàng)
+│   ├── /src/components # UI Reusable
+│   ├── /src/pages      # Các trang (Home, Cart, Rx)
+│   └── /src/store      # Zustand stores
+├── /admin              # React Vite (Quản trị)
+└── /agents             # Chứa các file .md hướng dẫn này
+```
+
+## 🎨 4. Quy chuẩn Giao diện (Vibe Long Châu)
+
+**Bảng màu:**
+- **Primary:** `#003580` (Navy Blue - Tin cậy).
+- **Secondary:** `#FFFFFF` (Trắng - Sạch sẽ).
+- **Accent:** `#FFD700` (Vàng - Cảnh báo/Khuyến mãi).
+
+**Typography:** Ưu tiên các font không chân (Sans-serif) như `'Inter'` hoặc `'Roboto'`.
+
+**UI Component:** Bo góc nhẹ (`rounded-lg`), đổ bóng mờ (`shadow-sm`), tạo cảm giác hiện đại và y tế.
+
+## 📡 5. Quy chuẩn Giao tiếp API
+
+**Định dạng phản hồi:** Tất cả API phải trả về JSON theo cấu trúc:
+- **Thành công:** `{ "success": true, "data": { ... } }`
+- **Thất bại:** `{ "success": false, "message": "Lỗi cụ thể..." }`
+
+**Error Handling:** Sử dụng mã lỗi chuẩn (400, 401, 403, 404, 500).
+
+## 🛡️ 6. Quy tắc đặt tên (Naming Conventions)
+
+- **Folder/Files:** `snake_case` (ví dụ: `product_controller.js`, `order_details.jsx`).
+- **Biến/Hàm:** `camelCase` (ví dụ: `handleAddToCart`).
+- **Component:** `PascalCase` (ví dụ: `PrescriptionCard.jsx`).
+- **Database:** Tên Collection số nhiều (ví dụ: `users`, `products`).
