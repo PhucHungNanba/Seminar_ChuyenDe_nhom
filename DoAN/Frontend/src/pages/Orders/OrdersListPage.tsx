@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useAuthStore } from '../../store/authStore'
 import { MOCK_ORDERS } from '../OrderTracking/OrderTrackingPage'
 import { Package, Clock, ChevronRight } from 'lucide-react'
 
@@ -26,6 +28,18 @@ const statusMap: Record<string, { label: string, colorClass: string }> = {
 }
 
 export default function OrdersListPage() {
+  const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const location = useLocation()
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth', { replace: true, state: { from: { pathname: location.pathname } } })
+    }
+  }, [user, navigate, location])
+
+  if (!user) return null
+
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">

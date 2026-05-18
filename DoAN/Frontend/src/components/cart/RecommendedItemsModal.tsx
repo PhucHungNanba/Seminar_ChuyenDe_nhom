@@ -2,43 +2,49 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Plus, ShoppingCart } from 'lucide-react'
 import { useCartStore } from '../../store/cartStore'
-import { getRulesForProducts } from '../../data/mockAssociationRules'
-import { getMedicineById } from '../../data/allProducts'
+import axiosClient from '../../api/axiosClient'
 import { Link } from 'react-router-dom'
+import { Product } from '../../types'
 
 export default function RecommendedItemsModal() {
   const latestAddedItemId = useCartStore(s => s.latestAddedItemId)
   const clearLatestAddedItem = useCartStore(s => s.clearLatestAddedItem)
   const addItem = useCartStore(s => s.addItem)
   
-  const [recommendations, setRecommendations] = useState<any[]>([])
+  const [recommendations, setRecommendations] = useState<Product[]>([])
 
   useEffect(() => {
-    if (latestAddedItemId) {
-      const addedItem = getMedicineById(latestAddedItemId)
-      if (addedItem) {
-        // use association rules to find recommendations
-        const rules = getRulesForProducts([latestAddedItemId])
-        let recommendedIds = rules.map(r => r.consequent.id)
-        // filter out duplicates and the item itself
-        recommendedIds = Array.from(new Set(recommendedIds)).filter(id => id !== latestAddedItemId)
-        
-        const recs = recommendedIds.map(id => getMedicineById(id)).filter(Boolean)
-        setRecommendations(recs)
+    const fetchRecs = async () => {
+      if (latestAddedItemId) {
+        try {
+          const res: any = await axiosClient.get(`/association-rules/recommendations?productIds=${latestAddedItemId}`)
+          const rules = res?.data || res || []
+          let recs = rules.map((r: any) => r.consequent).filter(Boolean)
+          
+          // Filter out duplicates by _id and filter out the item itself
+          recs = Array.from(new Map(recs.map((item: Product) => [item._id, item])).values())
+            .filter((item: any) => item._id !== latestAddedItemId);
+            
+          setRecommendations(recs)
+        } catch {
+          // AI service có thể chưa khởi động - ẩn modal
+          setRecommendations([])
+        }
       }
     }
+    fetchRecs()
   }, [latestAddedItemId])
 
   if (!latestAddedItemId || recommendations.length === 0) return null
 
-  function handleAddRec(rec: any) {
+  function handleAddRec(rec: Product) {
     addItem({
-      id: rec.id,
+      id: rec._id,
       name: rec.name,
       type: rec.type,
       price: rec.price,
       quantity: 1,
-      imageUrl: rec.imageUrl
+      imageUrl: rec.images?.[0] || 'https://placehold.co/320x320/e2e8f0/64748b?text=No+Image'
     })
   }
 
@@ -71,16 +77,16 @@ export default function RecommendedItemsModal() {
         <div className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {recommendations.slice(0, 4).map(rec => (
-              <div key={rec.id} className="flex gap-4 p-3 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors bg-gray-50/50">
+              <div key={rec._id} className="flex gap-4 p-3 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors bg-gray-50/50">
                 <div className="w-20 h-20 bg-white rounded-lg p-2 border border-gray-100 shrink-0">
-                  <img src={rec.imageUrl} alt={rec.name} className="w-full h-full object-contain mix-blend-multiply" />
+                  <img src={rec.images?.[0] || 'https://placehold.co/320x320/e2e8f0/64748b?text=No+Image'} alt={rec.name} className="w-full h-full object-contain mix-blend-multiply" />
                 </div>
                 <div className="flex flex-col flex-1 justify-between">
-                  <Link to={`/products/${rec.id}`} onClick={clearLatestAddedItem} className="text-sm font-bold text-gray-800 line-clamp-2 hover:text-blue-600 transition-colors">
+                  <Link to={`/products/${rec._id}`} onClick={clearLatestAddedItem} className="text-sm font-bold text-gray-800 line-clamp-2 hover:text-blue-600 transition-colors">
                     {rec.name}
                   </Link>
                   <div className="flex items-end justify-between mt-2">
-                    <span className="font-bold text-blue-700">{rec.price.toLocaleString('vi-VN')}đ</span>
+                    <span className="font-bold text-blue-700">{rec.price?.toLocaleString('vi-VN')}đ</span>
                     <button
                       onClick={() => handleAddRec(rec)}
                       disabled={rec.type === 'rx'}

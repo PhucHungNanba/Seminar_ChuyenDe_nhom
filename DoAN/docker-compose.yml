@@ -1,0 +1,100 @@
+services:
+  api-gateway:
+    build:
+      context: ./Backend/api-gateway
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Backend/api-gateway:/app
+      - /app/node_modules
+    networks:
+      - medicine-network
+
+  user-service:
+    build:
+      context: ./Backend/user-service
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./Backend/user-service/.env
+    volumes:
+      - ./Backend/user-service:/app
+      - /app/node_modules
+    networks:
+      - medicine-network
+
+  product-service:
+    build:
+      context: ./Backend/product-service
+    container_name: product-service
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./Backend/product-service/.env
+    volumes:
+      - ./Backend/product-service:/app
+      - /app/node_modules
+    networks:
+      - medicine-network
+
+  order-service:
+    build:
+      context: ./Backend/order-service
+    container_name: order-service
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./Backend/order-service/.env
+    volumes:
+      - ./Backend/order-service:/app
+      - /app/node_modules
+    networks:
+      - medicine-network
+
+  ai-service:
+    build:
+      context: ./Backend/ai-service
+    container_name: ai-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Backend/ai-service:/app
+      - /app/__pycache__
+    networks:
+      - medicine-network
+    profiles:
+      - dont-start # Profile này giúp service không tự động chạy khi dùng lệnh docker-compose up -d thông thường
+
+  frontend:
+    build:
+      context: ./Frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./Frontend/.env
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+    networks:
+      - medicine-network
+
+  admin:
+    build:
+      context: ./Admin
+    container_name: admin
+    ports:
+      - "5174:5174"
+    env_file:
+      - ./Admin/.env
+    volumes:
+      - ./Admin:/app
+      - /app/node_modules
+    networks:
+      - medicine-network
+
+networks:
+  medicine-network:
+    driver: bridge

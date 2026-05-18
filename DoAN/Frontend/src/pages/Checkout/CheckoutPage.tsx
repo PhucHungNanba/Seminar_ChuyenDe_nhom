@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, User, Phone, MapPin, FileText,
@@ -7,6 +7,8 @@ import {
   ShieldCheck, AlertTriangle, ChevronRight, Package
 } from 'lucide-react'
 import { useCartStore } from '../../store/cartStore'
+import { useAuthStore } from '../../store/authStore'
+import axiosClient from '../../api/axiosClient'
 import TypeBadge from '../../components/common/TypeBadge'
 
 // ── Types ──────────────────────────────────────────
@@ -100,12 +102,25 @@ export default function CheckoutPage() {
   const items = useCartStore((s) => s.items)
 
   // ── Form state ──────────────────────────────────
+  const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const location = useLocation()
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth', { replace: true, state: { from: { pathname: location.pathname } } })
+    }
+  }, [user, navigate, location])
+
   const [form, setForm] = useState<DeliveryForm>({
-    fullName: '', phone: '', email: '',
+    fullName: user?.fullName || '', phone: '', email: user?.email || '',
     address: '', city: '', district: '', ward: '', note: '',
   })
   const [payment, setPayment] = useState<PaymentMethod>('cod')
   const [submitted, setSubmitted] = useState(false)
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
+  const [orderId, setOrderId] = useState<string>('')
   const [errors, setErrors] = useState<Partial<Record<keyof DeliveryForm, string>>>({})
 
   function setField(key: keyof DeliveryForm, val: string) {
@@ -125,9 +140,50 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (validate()) setSubmitted(true)
+    if (!validate()) return
+
+    setIsPlacingOrder(true)
+    setOrderError(null)
+
+    try {
+      const clearCart = useCartStore.getState().clearCart
+      const orderPayload = {
+        items: items.map(i => ({
+          productId: i._id || i.id,
+          quantity: i.quantity,
+          price: i.price,
+          name: i.name,
+        })),
+        shippingAddress: `${form.address}, ${form.district}, ${form.city}`,
+        paymentMethod: payment,
+        customerName: form.fullName,
+        customerPhone: form.phone,
+        customerEmail: form.email,
+        note: form.note,
+      }
+
+      const res: any = await axiosClient.post('/orders', orderPayload)
+      // Interceptor đã unwrap: res = { success, message, data: order }
+      const createdOrder = res?.data || res
+      setOrderId(createdOrder?._id || createdOrder?.id || '')
+
+      // Xóa giỏ hàng sau khi đặt hàng thành công
+      clearCart()
+      setSubmitted(true)
+    } catch (err: any) {
+      const status = err?.response?.status || err?.status
+      if (status === 401 || status === 403) {
+        setOrderError('Bạn cần đăng nhập để thực hiện thao tác này.')
+        navigate('/auth', { replace: true, state: { from: { pathname: location.pathname } } })
+      } else {
+        const msg = err?.response?.data?.message || err?.data?.message || err?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại!'
+        setOrderError(msg)
+      }
+    } finally {
+      setIsPlacingOrder(false)
+    }
   }
 
   const userPoints = useCartStore((s) => s.userPoints)
@@ -166,9 +222,10 @@ export default function CheckoutPage() {
         </div>
         <div className="bg-slate-50 rounded-2xl p-4 w-full text-sm text-left border border-slate-100">
           <p className="text-slate-400 mb-1">Mã đơn hàng</p>
-          <p className="font-bold text-sky-600 text-lg">
-            #PC{Date.now().toString().slice(-6)}
+          <p className="font-bold text-sky-600 text-lg font-mono">
+            #{orderId ? orderId.slice(-8).toUpperCase() : 'ĐANG XỬ LÝ'}
           </p>
+          <p className="text-xs text-slate-400 mt-0.5">ID: {orderId || 'N/A'}</p>
           <p className="text-slate-400 mt-3 mb-1">Giao đến</p>
           <p className="font-medium text-slate-700">{form.fullName} · {form.phone}</p>
           <p className="text-slate-500">{form.address}, {form.district}, {form.city}</p>
@@ -498,19 +555,46 @@ export default function CheckoutPage() {
                 </motion.div>
               )}
 
+              {/* Order error banner */}
+              {orderError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{orderError}</span>
+                </motion.div>
+              )}
+
               {/* Submit button */}
               <motion.button
                 id="btn-place-order"
                 type="submit"
+                disabled={isPlacingOrder}
                 whileTap={{ scale: 0.97 }}
-                className="mt-5 w-full flex items-center justify-center gap-2 py-3 px-6
-                           rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white
-                           font-semibold text-sm shadow-md hover:shadow-sky-200
-                           hover:from-sky-600 hover:to-sky-700 transition-all"
+                className={`mt-5 w-full flex items-center justify-center gap-2 py-3 px-6
+                           rounded-xl text-white font-semibold text-sm shadow-md transition-all
+                           ${isPlacingOrder
+                             ? 'bg-sky-400 cursor-wait'
+                             : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 hover:shadow-sky-200'
+                           }`}
               >
-                <ShieldCheck className="w-4 h-4" />
-                Đặt hàng ngay
-                <ChevronRight className="w-4 h-4" />
+                {isPlacingOrder ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    Đang đặt hàng...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    Đặt hàng ngay
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
               </motion.button>
 
               <p className="text-center text-xs text-slate-400 mt-3 flex items-center justify-center gap-1">

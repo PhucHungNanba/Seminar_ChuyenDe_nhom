@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -7,24 +7,27 @@ import {
   Stethoscope, Hospital, RefreshCw, Eye, X,
   AlertTriangle, ShoppingCart,
 } from 'lucide-react'
-import {
-  MOCK_PRESCRIPTIONS,
-  type SavedPrescription,
-} from '../../data/mockPrescriptionVault'
+import { type SavedPrescription } from '../../types'
 import { useCartStore } from '../../store/cartStore'
+import axiosClient from '../../api/axiosClient'
+import { formatDisplayId } from '../../utils/formatHelpers'
+import { useAuthStore } from '../../store/authStore'
 
 // ─── Sidebar nav items ────────────────────────────────────────────────────────
 type NavKey = 'vault' | 'orders' | 'profile' | 'notifications' | 'security'
 
 const NAV_ITEMS: { key: NavKey; icon: typeof FileText; label: string; sub?: string }[] = [
-  { key: 'vault',         icon: FileText,   label: 'Sổ lưu đơn thuốc',   sub: `${MOCK_PRESCRIPTIONS.length} đơn` },
-  { key: 'orders',        icon: ShoppingBag, label: 'Lịch sử đơn hàng',  sub: '12 đơn' },
+  { key: 'vault',         icon: FileText,   label: 'Sổ lưu đơn thuốc' },
+  { key: 'orders',        icon: ShoppingBag, label: 'Lịch sử đơn hàng' },
   { key: 'profile',       icon: User,        label: 'Thông tin cá nhân' },
   { key: 'notifications', icon: Bell,        label: 'Thông báo' },
   { key: 'security',      icon: Shield,      label: 'Bảo mật & Quyền riêng tư' },
 ]
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
+function getPrxStatus(expiryDate: string) {
+  return new Date(expiryDate).getTime() > Date.now() ? 'valid' : 'expired'
+}
+
 function StatusBadge({ status }: { status: 'valid' | 'expired' }) {
   return status === 'valid' ? (
     <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
@@ -38,6 +41,7 @@ function StatusBadge({ status }: { status: 'valid' | 'expired' }) {
 }
 
 function fmt(iso: string) {
+  if (!iso) return ''
   return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
@@ -51,6 +55,7 @@ function PrescriptionModal({
   onClose: () => void
   onReorder: (p: SavedPrescription) => void
 }) {
+  const status = getPrxStatus(prx.expiryDate)
   return (
     <motion.div
       key="backdrop"
@@ -68,10 +73,9 @@ function PrescriptionModal({
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
       >
-        {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-slate-100">
           <div>
-            <p className="text-xs text-slate-400 font-mono mb-1">{prx.prescriptionCode}</p>
+            <p className="text-xs text-slate-400 font-mono mb-1">{formatDisplayId(prx._id, 'RX')}</p>
             <h3 className="font-bold text-slate-800 text-lg">{prx.diagnosis}</h3>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors">
@@ -80,11 +84,10 @@ function PrescriptionModal({
         </div>
 
         <div className="p-6 flex flex-col gap-5">
-          {/* Image + info */}
           <div className="flex gap-4">
             <img src={prx.thumbnailUrl} alt="Đơn thuốc" className="w-28 h-40 object-cover rounded-xl border border-slate-100 shrink-0" />
             <div className="flex flex-col gap-2 text-sm">
-              <StatusBadge status={prx.status} />
+              <StatusBadge status={status} />
               <div className="flex items-center gap-2 text-slate-600"><Stethoscope className="w-4 h-4 text-sky-400 shrink-0" />{prx.doctorName} — {prx.doctorSpecialty}</div>
               <div className="flex items-center gap-2 text-slate-600"><Hospital className="w-4 h-4 text-sky-400 shrink-0" />{prx.hospital}</div>
               <div className="flex items-center gap-2 text-slate-600"><Calendar className="w-4 h-4 text-sky-400 shrink-0" />Cấp: {fmt(prx.issuedDate)} — Hết hạn: {fmt(prx.expiryDate)}</div>
@@ -92,27 +95,25 @@ function PrescriptionModal({
             </div>
           </div>
 
-          {/* Medicines */}
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Danh sách thuốc ({prx.medicines.length})</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Danh sách thuốc ({prx.medicines?.length || 0})</p>
             <div className="flex flex-col gap-2">
-              {prx.medicines.map((m) => (
+              {(prx.medicines || []).map((m) => (
                 <div key={m.productId} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
                   <img src={m.imageUrl} alt={m.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{m.name}</p>
                     <p className="text-xs text-slate-500">{m.dosage} · SL: {m.quantity}</p>
                   </div>
-                  <p className="text-sm font-bold text-sky-700 shrink-0">{(m.price * m.quantity).toLocaleString('vi-VN')}đ</p>
+                  <p className="text-sm font-bold text-sky-700 shrink-0">{((m.price || 0) * (m.quantity || 1)).toLocaleString('vi-VN')}đ</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* CTA */}
-          {prx.status === 'valid' ? (
+          {status === 'valid' ? (
             <motion.button
-              id={`modal-reorder-${prx.id}`}
+              id={`modal-reorder-${prx._id}`}
               whileTap={{ scale: 0.97 }}
               onClick={() => { onReorder(prx); onClose() }}
               className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-semibold text-white"
@@ -143,6 +144,7 @@ function PrescriptionCard({
   onReorder: (p: SavedPrescription) => void
 }) {
   const [reordered, setReordered] = useState(false)
+  const status = getPrxStatus(prx.expiryDate)
 
   function handleReorder() {
     onReorder(prx)
@@ -151,7 +153,7 @@ function PrescriptionCard({
   }
 
   const daysLeft = Math.ceil((new Date(prx.expiryDate).getTime() - Date.now()) / 86400000)
-  const isExpiringSoon = prx.status === 'valid' && daysLeft > 0 && daysLeft <= 30
+  const isExpiringSoon = status === 'valid' && daysLeft > 0 && daysLeft <= 30
 
   return (
     <motion.div
@@ -161,17 +163,15 @@ function PrescriptionCard({
       whileHover={{ y: -3 }}
       transition={{ duration: 0.3 }}
       className={`group bg-white rounded-2xl border shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col
-        ${prx.status === 'expired' ? 'border-slate-100 opacity-75' : 'border-slate-100'}`}
+        ${status === 'expired' ? 'border-slate-100 opacity-75' : 'border-slate-100'}`}
     >
-      {/* Thumbnail */}
       <div className="relative overflow-hidden bg-slate-50">
         <img
           src={prx.thumbnailUrl}
           alt="Đơn thuốc"
           className="w-full h-44 object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        {/* Status overlay */}
-        <div className="absolute top-3 left-3"><StatusBadge status={prx.status} /></div>
+        <div className="absolute top-3 left-3"><StatusBadge status={status} /></div>
         {isExpiringSoon && (
           <div className="absolute top-3 right-3">
             <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full">
@@ -179,20 +179,15 @@ function PrescriptionCard({
             </span>
           </div>
         )}
-        {prx.status === 'expired' && (
+        {status === 'expired' && (
           <div className="absolute inset-0 bg-slate-900/20" />
         )}
       </div>
 
-      {/* Body */}
       <div className="p-4 flex flex-col flex-1 gap-3">
-        {/* Code */}
-        <p className="text-[10px] font-mono text-slate-400 truncate">{prx.prescriptionCode}</p>
-
-        {/* Diagnosis */}
+        <p className="text-[10px] font-mono text-slate-400 truncate">{formatDisplayId(prx._id, 'RX')}</p>
         <p className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug">{prx.diagnosis}</p>
 
-        {/* Meta */}
         <div className="flex flex-col gap-1.5 text-xs text-slate-500">
           <div className="flex items-center gap-1.5">
             <Stethoscope className="w-3.5 h-3.5 text-sky-400 shrink-0" />
@@ -204,34 +199,32 @@ function PrescriptionCard({
           </div>
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className={prx.status === 'expired' ? 'text-slate-400 line-through' : isExpiringSoon ? 'text-orange-600 font-medium' : ''}>
+            <span className={status === 'expired' ? 'text-slate-400 line-through' : isExpiringSoon ? 'text-orange-600 font-medium' : ''}>
               HSD: {fmt(prx.expiryDate)}
             </span>
           </div>
         </div>
 
-        {/* Medicine pills */}
         <div className="flex flex-wrap gap-1">
-          {prx.medicines.map((m) => (
+          {(prx.medicines || []).map((m) => (
             <span key={m.productId} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium truncate max-w-[120px]">
               {m.name}
             </span>
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-2 mt-auto pt-1">
           <button
-            id={`view-prx-${prx.id}`}
+            id={`view-prx-${prx._id}`}
             onClick={onView}
             className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
           >
             <Eye className="w-3.5 h-3.5" /> Xem chi tiết
           </button>
 
-          {prx.status === 'valid' && (
+          {status === 'valid' && (
             <motion.button
-              id={`reorder-prx-${prx.id}`}
+              id={`reorder-prx-${prx._id}`}
               onClick={handleReorder}
               whileTap={{ scale: 0.95 }}
               className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold py-2 rounded-xl text-white transition-all duration-200"
@@ -261,38 +254,56 @@ function PrescriptionVault() {
   const [selected, setSelected] = useState<SavedPrescription | null>(null)
   const [filter, setFilter] = useState<'all' | 'valid' | 'expired'>('all')
   const [toast, setToast] = useState('')
+  
+  const [prescriptions, setPrescriptions] = useState<SavedPrescription[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchPrescriptions = async () => {
+      try {
+        const response = await axiosClient.get('/orders/prescriptions/my')
+        setPrescriptions(response.data?.data || response.data || [])
+      } catch (error) {
+        console.error("Lỗi khi tải đơn thuốc:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPrescriptions()
+  }, [])
 
   const displayed = filter === 'all'
-    ? MOCK_PRESCRIPTIONS
-    : MOCK_PRESCRIPTIONS.filter((p) => p.status === filter)
+    ? prescriptions
+    : prescriptions.filter((p) => getPrxStatus(p.expiryDate) === filter)
 
-  // Map Rx medicines → cart, auto-attach prescription thumbnail
   function handleReorder(prx: SavedPrescription) {
-    prx.medicines.forEach((med) => {
+    (prx.medicines || []).forEach((med) => {
       addItem({ id: med.productId, name: med.name, type: 'rx', price: med.price, quantity: med.quantity, imageUrl: med.imageUrl })
       setPrescription(med.productId, {
         fileUrl: prx.thumbnailUrl,
-        fileName: `${prx.prescriptionCode}.jpg`,
+        fileName: `${prx.prescriptionCode || prx._id}.jpg`,
         uploadedAt: new Date().toISOString(),
       })
     })
-    setToast(`Đã thêm ${prx.medicines.length} thuốc vào giỏ hàng!`)
+    setToast(`Đã thêm ${(prx.medicines || []).length} thuốc vào giỏ hàng!`)
     setTimeout(() => setToast(''), 3000)
   }
 
-  const validCount = MOCK_PRESCRIPTIONS.filter((p) => p.status === 'valid').length
-  const expiredCount = MOCK_PRESCRIPTIONS.filter((p) => p.status === 'expired').length
+  const validCount = prescriptions.filter((p) => getPrxStatus(p.expiryDate) === 'valid').length
+  const expiredCount = prescriptions.filter((p) => getPrxStatus(p.expiryDate) === 'expired').length
+
+  if (loading) {
+    return <div className="py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500 mx-auto"></div></div>
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Sổ lưu đơn thuốc</h2>
           <p className="text-sm text-slate-500 mt-0.5">{validCount} hợp lệ · {expiredCount} hết hạn</p>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
           {([['all', 'Tất cả'], ['valid', 'Hợp lệ'], ['expired', 'Hết hạn']] as const).map(([k, label]) => (
             <button
@@ -309,12 +320,11 @@ function PrescriptionVault() {
         </div>
       </div>
 
-      {/* Grid */}
       <motion.div layout style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px,1fr))', gap: '1.25rem' }}>
         <AnimatePresence mode="popLayout">
           {displayed.map((prx) => (
             <PrescriptionCard
-              key={prx.id}
+              key={prx._id}
               prx={prx}
               onView={() => setSelected(prx)}
               onReorder={handleReorder}
@@ -323,14 +333,12 @@ function PrescriptionVault() {
         </AnimatePresence>
       </motion.div>
 
-      {/* Detail modal */}
       <AnimatePresence>
         {selected && (
           <PrescriptionModal prx={selected} onClose={() => setSelected(null)} onReorder={handleReorder} />
         )}
       </AnimatePresence>
 
-      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -348,7 +356,6 @@ function PrescriptionVault() {
   )
 }
 
-// ─── Placeholder panels ───────────────────────────────────────────────────────
 function ComingSoon({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -365,16 +372,26 @@ function ComingSoon({ label }: { label: string }) {
 export default function UserProfilePage() {
   const [activeNav, setActiveNav] = useState<NavKey>('vault')
   const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
 
-  const MOCK_USER = { name: 'Nguyễn Thị Thanh Hà', email: 'thanhha@gmail.com', phone: '0912 345 678', avatar: 'https://placehold.co/80x80/e0f2fe/0284c7?text=TH' }
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth', { replace: true, state: { from: { pathname: '/profile' } } })
+    }
+  }, [user, navigate])
+
+  if (!user) return null;
+
+  const MOCK_USER = { 
+    name: user.fullName || 'Người dùng', 
+    email: user.email, 
+    phone: 'Chưa cập nhật', 
+    avatar: `https://placehold.co/80x80/e0f2fe/0284c7?text=${user.fullName?.substring(0, 2).toUpperCase() || 'US'}` 
+  }
 
   return (
     <div className="max-w-6xl mx-auto flex gap-7 items-start">
-
-      {/* ════ Sidebar ════ */}
       <aside className="hidden lg:flex flex-col w-64 shrink-0 gap-4 sticky top-6">
-
-        {/* Avatar card */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col items-center text-center gap-3">
           <div className="relative">
             <img src={MOCK_USER.avatar} alt="Avatar" className="w-16 h-16 rounded-full ring-4 ring-sky-100" />
@@ -385,17 +402,8 @@ export default function UserProfilePage() {
             <p className="text-xs text-slate-400 mt-0.5">{MOCK_USER.email}</p>
           </div>
           <div className="w-full h-px bg-slate-100" />
-          <div className="flex gap-4 text-center w-full">
-            {[{ label: 'Đơn thuốc', value: MOCK_PRESCRIPTIONS.length }, { label: 'Đơn hàng', value: 12 }].map((s) => (
-              <div key={s.label} className="flex-1">
-                <p className="text-base font-bold text-sky-600">{s.value}</p>
-                <p className="text-xs text-slate-400">{s.label}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Nav */}
         <nav className="bg-white rounded-2xl border border-slate-100 shadow-sm p-2 flex flex-col gap-1">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
@@ -421,16 +429,17 @@ export default function UserProfilePage() {
         </nav>
 
         <button
-          onClick={() => navigate('/')}
+          onClick={() => {
+            logout()
+            navigate('/')
+          }}
           className="text-xs text-slate-400 hover:text-red-500 transition-colors text-center py-1"
         >
           Đăng xuất
         </button>
       </aside>
 
-      {/* ════ Main Content ════ */}
       <main className="flex-1 min-w-0">
-        {/* Mobile: breadcrumb nav */}
         <div className="flex gap-2 overflow-x-auto pb-1 mb-5 lg:hidden">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon

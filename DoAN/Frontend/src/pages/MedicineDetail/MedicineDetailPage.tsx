@@ -1,24 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, ShoppingCart, Star, Package,
-  AlertTriangle, ShieldAlert, CheckCircle2, Minus, Plus, AlertCircle, MapPin, Search, ChevronRight
+  AlertTriangle, CheckCircle2, Minus, Plus, AlertCircle, MapPin, Search, ChevronRight
 } from 'lucide-react'
-import { getMedicineById } from '../../data/allProducts'
+import axiosClient from '../../api/axiosClient'
+import { Product, AssociationRule } from '../../types'
 import { useCartStore } from '../../store/cartStore'
 import TypeBadge from '../../components/common/TypeBadge'
 import FrequentlyBoughtTogether from '../../components/common/FrequentlyBoughtTogether'
-import { getRulesForProducts } from '../../data/mockAssociationRules'
 
-// ── VIBE 2: MOCK PHARMACIES ──
 const MOCK_PHARMACIES = [
   { id: 1, name: 'Nhà thuốc PharmaCare Quận 5', address: '123 An Dương Vương, P.8, Quận 5', distance: '1.2 km' },
   { id: 2, name: 'Nhà thuốc PharmaCare Quận 10', address: '456 Sư Vạn Hạnh, P.12, Quận 10', distance: '3.5 km' },
   { id: 3, name: 'Nhà thuốc PharmaCare Quận 1', address: '789 Trần Hưng Đạo, P.Cầu Kho, Quận 1', distance: '4.1 km' },
 ]
 
-// ── Tab definition ─────────────────────────────────
 const TABS = [
   { key: 'ingredients', label: 'Thành phần' },
   { key: 'indications', label: 'Chỉ định' },
@@ -28,8 +26,8 @@ const TABS = [
 
 type TabKey = typeof TABS[number]['key']
 
-// ── Render markdown-like text (bold, bullet) ───────
 function SimpleText({ text }: { text: string }) {
+  if (!text) return <p className="text-sm text-slate-500 italic">Đang cập nhật...</p>
   return (
     <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line space-y-1">
       {text.split('\n').map((line, i) => {
@@ -46,7 +44,6 @@ function SimpleText({ text }: { text: string }) {
   )
 }
 
-// ── Star rating ────────────────────────────────────
 function StarRating({ rating, count }: { rating: number; count: number }) {
   return (
     <div className="flex items-center gap-2">
@@ -66,21 +63,64 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
   )
 }
 
-// ── Main page ──────────────────────────────────────
 export default function MedicineDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const medicine = getMedicineById(id ?? '')
   const addItem = useCartStore((s) => s.addItem)
+
+  const [medicine, setMedicine] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [rules, setRules] = useState<AssociationRule[]>([])
+  const [rulesLoading, setRulesLoading] = useState(false)
 
   const [activeTab, setActiveTab] = useState<TabKey>('ingredients')
   const [qty, setQty] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
 
-  // Vibe 2 States
   const [showInventory, setShowInventory] = useState(false)
   const [locationLoaded, setLocationLoaded] = useState(false)
 
-  // ── 404 state ──────────────────────────────────
+  useEffect(() => {
+    const fetchMedicine = async () => {
+      if (!id) return
+      setLoading(true)
+      try {
+        const response = await axiosClient.get(`/products/${id}`)
+        setMedicine(response.data?.data || response.data)
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin thuốc:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchMedicine()
+  }, [id])
+
+  useEffect(() => {
+    const fetchRules = async () => {
+      if (!id) return
+      setRulesLoading(true)
+      try {
+        // Tạm gọi API giả định cho AI service, điều chỉnh theo thực tế
+        const response = await axiosClient.get(`/association-rules/recommendations?productId=${id}`)
+        const data = response.data?.data || response.data || []
+        setRules(data)
+      } catch (error) {
+        console.error("Lỗi khi lấy gợi ý:", error)
+      } finally {
+        setRulesLoading(false)
+      }
+    }
+    fetchRules()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
+      </div>
+    )
+  }
+
   if (!medicine) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
@@ -93,14 +133,19 @@ export default function MedicineDetailPage() {
     )
   }
 
+  const imgUrl = (medicine.images && medicine.images.length > 0) ? medicine.images[0] : 'https://placehold.co/320x320/e2e8f0/64748b?text=No+Image'
+  const inStock = medicine.stock_quantity ? medicine.stock_quantity > 0 : true
+  const finalRating = medicine.rating || 5.0
+  const finalReviewCount = medicine.reviewCount || 0
+
   function handleAddToCart() {
     addItem({
-      id: medicine!.id,
+      id: medicine!._id,
       name: medicine!.name,
       type: medicine!.type,
       price: medicine!.price,
       quantity: qty,
-      imageUrl: medicine!.imageUrl,
+      imageUrl: imgUrl,
     })
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
@@ -108,8 +153,6 @@ export default function MedicineDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-
-      {/* ── Breadcrumb ── */}
       <nav className="flex items-center gap-2 text-sm text-slate-400 mb-6">
         <Link to="/" className="hover:text-sky-500 transition-colors">Trang chủ</Link>
         <span>/</span>
@@ -118,26 +161,20 @@ export default function MedicineDetailPage() {
         <span className="text-slate-700 font-medium truncate max-w-[200px]">{medicine.name}</span>
       </nav>
 
-      {/* ══ Main modern layout ══════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-
-        {/* ── LEFT: Product image (Big left column) ── */}
         <motion.div
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35 }}
           className="lg:col-span-5 flex flex-col gap-4"
         >
-          {/* Main image */}
           <div className="bg-[#f5f5f7] rounded-[32px] overflow-hidden flex items-center justify-center p-12 aspect-square">
             <img
-              src={medicine.imageUrl}
+              src={imgUrl}
               alt={medicine.name}
               className="w-full h-full object-contain mix-blend-multiply drop-shadow-xl"
             />
           </div>
-
-          {/* Thumbnail strip (placeholder for future gallery) */}
           <div className="flex gap-3">
             {[1, 2, 3].map((n) => (
               <div
@@ -146,7 +183,7 @@ export default function MedicineDetailPage() {
                             ${n === 1 ? 'ring-2 ring-black' : 'hover:bg-[#e8e8ed]'}`}
               >
                 <img
-                  src={medicine.imageUrl}
+                  src={imgUrl}
                   alt=""
                   className="w-full h-full object-contain mix-blend-multiply opacity-80"
                 />
@@ -155,16 +192,14 @@ export default function MedicineDetailPage() {
           </div>
         </motion.div>
 
-        {/* ── RIGHT: Product info (Typography focus) ── */}
         <motion.div
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35 }}
           className="lg:col-span-7 flex flex-col gap-6 pt-4"
         >
-          {/* Tags */}
           <div className="flex flex-wrap gap-2">
-            {medicine.tags.map((tag) => (
+            {(medicine.tags || []).map((tag) => (
               <span key={tag}
                 className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[11px] uppercase tracking-wider font-semibold">
                 {tag}
@@ -172,7 +207,6 @@ export default function MedicineDetailPage() {
             ))}
           </div>
 
-          {/* Name */}
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight tracking-tight">
               {medicine.name}
@@ -184,21 +218,17 @@ export default function MedicineDetailPage() {
             </p>
           </div>
 
-          {/* OTC / Rx badge — green for OTC, red for Rx */}
           <TypeBadge type={medicine.type} size="md" />
 
-          {/* Rating */}
-          <StarRating rating={medicine.rating} count={medicine.reviewCount} />
+          <StarRating rating={finalRating} count={finalReviewCount} />
 
-          {/* Price */}
           <div className="flex items-end gap-3">
             <p className="text-3xl font-bold text-sky-600">
-              {medicine.price.toLocaleString('vi-VN')}đ
+              {medicine.price?.toLocaleString('vi-VN')}đ
             </p>
             <p className="text-sm text-slate-400 mb-1">/ {medicine.unit}</p>
           </div>
 
-          {/* ── Rx Alert Box ── */}
           {medicine.type === 'rx' ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.97 }}
@@ -220,9 +250,8 @@ export default function MedicineDetailPage() {
             </motion.div>
           ) : null}
 
-          {/* Stock status */}
           <div className="flex items-center gap-2 text-sm">
-            {medicine.inStock ? (
+            {inStock ? (
               <>
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 <span className="text-emerald-600 font-medium">Còn hàng · Giao trong 2 giờ</span>
@@ -235,9 +264,7 @@ export default function MedicineDetailPage() {
             )}
           </div>
 
-          {/* ── Quantity + Add to cart ── */}
           <div className="flex items-center gap-3 mt-2">
-            {/* Qty stepper */}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200
                             rounded-full px-2 py-1.5">
               <button
@@ -259,17 +286,16 @@ export default function MedicineDetailPage() {
               </button>
             </div>
 
-            {/* Add to cart button */}
             <motion.button
               id="btn-add-to-cart"
               onClick={handleAddToCart}
-              disabled={!medicine.inStock}
+              disabled={!inStock}
               whileTap={{ scale: 0.96 }}
               className={`flex-1 flex items-center justify-center gap-2 py-4 px-8
                           rounded-full font-bold text-[15px] transition-all
                           ${addedToCart
                             ? 'bg-emerald-500 text-white'
-                            : medicine.inStock
+                            : inStock
                               ? 'bg-black text-white hover:bg-slate-800'
                               : 'bg-[#f5f5f7] text-slate-400 cursor-not-allowed'
                           }`}
@@ -293,7 +319,6 @@ export default function MedicineDetailPage() {
                     animate={{ opacity: 1 }}
                     className="flex items-center gap-2"
                   >
-                    {/* Rx: thêm icon cảnh báo vào nút — OTC: chỉ icon giỏ hàng */}
                     {medicine.type === 'rx'
                       ? <AlertCircle className="w-4 h-4" />
                       : <ShoppingCart className="w-4 h-4" />
@@ -305,7 +330,6 @@ export default function MedicineDetailPage() {
             </motion.button>
           </div>
 
-          {/* ── Vibe 2: Location Inventory Box ── */}
           <div className="mt-4 border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm">
             <button 
               onClick={() => {
@@ -364,14 +388,12 @@ export default function MedicineDetailPage() {
             </AnimatePresence>
           </div>
 
-
-          {/* Quick info */}
           <div className="grid grid-cols-2 gap-3 mt-2">
             {[
               { label: 'Đóng gói', value: medicine.unit },
               { label: 'Nhà sản xuất', value: medicine.manufacturer },
               { label: 'Loại thuốc', value: medicine.type === 'otc' ? 'Không kê đơn' : 'Kê đơn (Rx)' },
-              { label: 'Tình trạng', value: medicine.inStock ? 'Còn hàng' : 'Hết hàng' },
+              { label: 'Tình trạng', value: inStock ? 'Còn hàng' : 'Hết hàng' },
             ].map(({ label, value }) => (
               <div key={label} className="bg-slate-50 rounded-xl px-3 py-2.5">
                 <p className="text-xs text-slate-400">{label}</p>
@@ -382,14 +404,12 @@ export default function MedicineDetailPage() {
         </motion.div>
       </div>
 
-      {/* ══ Tab section ══════════════════════════════ */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.35 }}
         className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
       >
-        {/* Tab header */}
         <div className="flex border-b border-slate-100 overflow-x-auto">
           {TABS.map((tab) => (
             <button
@@ -404,7 +424,6 @@ export default function MedicineDetailPage() {
                           }`}
             >
               {tab.label}
-              {/* Active underline indicator */}
               {activeTab === tab.key && (
                 <motion.div
                   layoutId="tab-indicator"
@@ -415,7 +434,6 @@ export default function MedicineDetailPage() {
           ))}
         </div>
 
-        {/* Tab content with AnimatePresence */}
         <div className="p-6">
           <AnimatePresence mode="wait">
             <motion.div
@@ -425,13 +443,12 @@ export default function MedicineDetailPage() {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2 }}
             >
-              <SimpleText text={medicine.tabs[activeTab]} />
+              <SimpleText text={medicine.tabs?.[activeTab] || ''} />
             </motion.div>
           </AnimatePresence>
         </div>
       </motion.div>
 
-      {/* ── Back link ── */}
       <div className="mt-8">
         <Link
           to="/products"
@@ -443,13 +460,12 @@ export default function MedicineDetailPage() {
         </Link>
       </div>
 
-      {/* ── Frequently Bought Together ── */}
-      {/* associationRulesData: kết quả data mining từ BE, tạm dùng mock */}
       <FrequentlyBoughtTogether
-        associationRulesData={getRulesForProducts([medicine.id])}
-        currentProductIds={[medicine.id]}
+        associationRulesData={rules}
+        currentProductIds={[medicine._id]}
         title="Thường được mua cùng nhau"
         maxItems={8}
+        isLoading={rulesLoading}
       />
     </div>
   )

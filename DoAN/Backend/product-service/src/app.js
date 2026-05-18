@@ -4,11 +4,27 @@ const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 
-app.use(cors());
+// CORS: Cho phép từ Frontend, Admin và API Gateway
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
-// Định tuyến
-app.use('/api/products', productRoutes);
+// API Gateway strip /api/products trước khi forward, nên mount tại root '/'
+app.use('/', productRoutes);
 
 // Bắt lỗi chung cho toàn bộ app
 app.use((err, req, res, next) => {

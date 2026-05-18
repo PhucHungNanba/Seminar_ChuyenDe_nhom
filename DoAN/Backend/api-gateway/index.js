@@ -35,19 +35,35 @@ const onError = (err, req, res, target) => {
 };
 
 // Cấu hình Proxy Middleware
-const createServiceProxy = (target) => {
+const createServiceProxy = (target, extra = {}) => {
   return createProxyMiddleware({
     target,
     changeOrigin: true,
-    onError: (err, req, res) => onError(err, req, res, target)
+    logLevel: 'debug',
+    proxyTimeout: 5000,
+    timeout: 10000,
+    onError: (err, req, res) => onError(err, req, res, target),
+    ...extra,
   });
 };
 
 // Định tuyến (Routing) tới các Microservices
-app.use('/api/users', createServiceProxy('http://localhost:3001'));
-app.use('/api/products', createServiceProxy('http://localhost:3002'));
-app.use('/api/orders', createServiceProxy('http://localhost:3003'));
-app.use('/api/ai', createServiceProxy('http://localhost:8000'));
+// Trong Docker network, phải dùng tên container thay vì localhost
+app.use('/api/users', createServiceProxy(process.env.USER_SERVICE_URL || 'http://user-service:3001'));
+app.use('/api/products', createServiceProxy(process.env.PRODUCT_SERVICE_URL || 'http://product-service:3002'));
+app.use('/api/orders', createServiceProxy(process.env.ORDER_SERVICE_URL || 'http://order-service:3003'));
+// Association rules và AI đều trỏ về ai-service
+// Forward association-rules -> ai-service /api/ai
+app.use('/api/association-rules', createServiceProxy(process.env.AI_SERVICE_URL || 'http://ai-service:8000', {
+  // Express mount strips the base path, so re-add /api/ai for the upstream
+  pathRewrite: { '^/': '/api/ai/' }
+}));
+
+// Direct AI endpoints
+app.use('/api/ai', createServiceProxy(process.env.AI_SERVICE_URL || 'http://ai-service:8000', {
+  // Express mount strips /api/ai, add it back for the upstream
+  pathRewrite: { '^/': '/api/ai/' }
+}));
 
 // Health check cho API Gateway
 app.get('/health', (req, res) => {

@@ -1,30 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Edit2, Filter, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { useAdminStore, StockLocationType } from '../../store/useAdminStore';
+import { formatDisplayId } from '../../utils/formatHelpers';
 
 export default function InventoryManagementPage() {
-  const { inventory, updateStock } = useAdminStore();
+  const { inventory, updateStock, fetchInventory, isLoadingInventory, inventoryError } = useAdminStore();
   const [activeTab, setActiveTab] = useState<'all' | 'branches'>('branches');
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingCell, setEditingCell] = useState<{ id: string, branch: StockLocationType } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ _id: string, branch: StockLocationType } | null>(null);
   const [editValue, setEditValue] = useState('');
 
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
+
   const filteredData = inventory.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchTerm.toLowerCase())
+    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item._id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const startEdit = (id: string, branch: StockLocationType, currentValue: number) => {
-    setEditingCell({ id, branch });
+  const startEdit = (_id: string, branch: StockLocationType, currentValue: number) => {
+    setEditingCell({ _id, branch });
     setEditValue(currentValue.toString());
   };
 
   const saveEdit = () => {
     if (editingCell) {
       const newValue = parseInt(editValue) || 0;
-      updateStock(editingCell.id, editingCell.branch, newValue);
+      updateStock(editingCell._id, editingCell.branch, newValue);
     }
     setEditingCell(null);
   };
@@ -35,8 +40,8 @@ export default function InventoryManagementPage() {
   };
 
   const StockCell = ({ item, branch }: { item: typeof inventory[0], branch: StockLocationType }) => {
-    const isEditing = editingCell?.id === item.id && editingCell?.branch === branch;
-    const value = item.stockLocations[branch];
+    const isEditing = editingCell?._id === item._id && editingCell?.branch === branch;
+    const value = item.stockLocations?.[branch] || 0;
     const isWarning = value < 10;
 
     if (isEditing) {
@@ -54,7 +59,7 @@ export default function InventoryManagementPage() {
     }
 
     return (
-      <div className="group relative flex items-center justify-center w-full cursor-pointer h-full py-4" onClick={() => startEdit(item.id, branch, value)}>
+      <div className="group relative flex items-center justify-center w-full cursor-pointer h-full py-4" onClick={() => startEdit(item._id, branch, value)}>
         <span className={`font-medium ${isWarning ? 'text-red-600 font-bold' : 'text-gray-700'}`}>
           {value}
         </span>
@@ -64,6 +69,23 @@ export default function InventoryManagementPage() {
       </div>
     );
   };
+
+  if (isLoadingInventory) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (inventoryError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-red-600">
+        <p>{inventoryError}</p>
+        <button onClick={() => fetchInventory()} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Thử lại</button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -80,7 +102,6 @@ export default function InventoryManagementPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {/* Tabs */}
         <div className="flex border-b border-gray-200 bg-gray-50/50 px-4">
           <button 
             onClick={() => setActiveTab('all')}
@@ -129,27 +150,34 @@ export default function InventoryManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-                    <td className="p-4 font-medium text-gray-500 text-sm">{item.id}</td>
-                    <td className="p-4 font-medium text-gray-800">{item.name}</td>
-                    <td className="p-4 text-center bg-blue-50/20 font-semibold text-blue-800">
-                      {item.stockLocations['Kho Tổng'] + item.stockLocations['CH Quận 1'] + item.stockLocations['CH Quận 5']}
-                    </td>
-                    <td className="p-0 text-center border-l border-gray-100 align-middle">
-                      <StockCell item={item} branch="Kho Tổng" />
-                    </td>
-                    <td className="p-0 text-center border-l border-gray-100 align-middle">
-                      <StockCell item={item} branch="CH Quận 1" />
-                    </td>
-                    <td className="p-0 text-center border-l border-gray-100 align-middle">
-                      <StockCell item={item} branch="CH Quận 5" />
-                    </td>
-                  </tr>
-                ))}
+                {filteredData.map((item) => {
+                  const khoTong = item.stockLocations?.['Kho Tổng'] || 0;
+                  const quan1 = item.stockLocations?.['CH Quận 1'] || 0;
+                  const quan5 = item.stockLocations?.['CH Quận 5'] || 0;
+                  const totalStock = khoTong + quan1 + quan5;
+
+                  return (
+                    <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                      <td className="p-4 font-medium text-gray-500 text-sm">{formatDisplayId(item._id, 'MED')}</td>
+                      <td className="p-4 font-medium text-gray-800">{item.name}</td>
+                      <td className="p-4 text-center bg-blue-50/20 font-semibold text-blue-800">
+                        {totalStock}
+                      </td>
+                      <td className="p-0 text-center border-l border-gray-100 align-middle">
+                        <StockCell item={item} branch="Kho Tổng" />
+                      </td>
+                      <td className="p-0 text-center border-l border-gray-100 align-middle">
+                        <StockCell item={item} branch="CH Quận 1" />
+                      </td>
+                      <td className="p-0 text-center border-l border-gray-100 align-middle">
+                        <StockCell item={item} branch="CH Quận 5" />
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filteredData.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-gray-500">
+                    <td colSpan={6} className="p-8 text-center text-gray-500">
                       Không tìm thấy sản phẩm nào.
                     </td>
                   </tr>

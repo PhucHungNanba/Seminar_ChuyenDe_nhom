@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import {
   ShoppingCart, ArrowLeft, ShieldCheck,
   AlertTriangle, ChevronRight, Lock, CheckCircle2
@@ -7,7 +8,8 @@ import {
 import { useCartStore } from '../../store/cartStore'
 import CartItemCard from '../../components/cart/CartItem'
 import FrequentlyBoughtTogether from '../../components/common/FrequentlyBoughtTogether'
-import { getRulesForProducts } from '../../data/mockAssociationRules'
+import axiosClient from '../../api/axiosClient'
+import { AssociationRule } from '../../types'
 
 function formatVnd(n: number) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -16,7 +18,6 @@ function formatVnd(n: number) {
 export default function CartPage() {
   const items = useCartStore((s) => s.items)
 
-  // Rx items that are still missing prescription
   const rxMissingPrescription = items.filter(
     (i) => i.type === 'rx' && !i.prescription
   )
@@ -26,13 +27,33 @@ export default function CartPage() {
   const usePoints = useCartStore((s) => s.usePoints)
   const toggleUsePoints = useCartStore((s) => s.toggleUsePoints)
 
-  // Order summary calculations
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
   const shippingFee = subtotal >= 200000 ? 0 : 25000
   const discount = usePoints ? userPoints : 0
   const total = Math.max(0, subtotal + shippingFee - discount)
 
-  // ── Empty cart ───────────────────────────────────
+  const [rules, setRules] = useState<AssociationRule[]>([])
+  const [rulesLoading, setRulesLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchRules = async () => {
+      if (items.length === 0) return
+      setRulesLoading(true)
+      try {
+        const productIds = items.map(i => i.id).join(',')
+        const res: any = await axiosClient.get(`/association-rules/recommendations?productIds=${productIds}`)
+        // Interceptor đã unwrap response.data, res = body JSON trực tiếp
+        setRules(res?.data || res || [])
+      } catch {
+        // AI service có thể chưa khởi động - bỏ qua lỗi, không hiện UI error
+        setRules([])
+      } finally {
+        setRulesLoading(false)
+      }
+    }
+    fetchRules()
+  }, [items.map(i => i.id).join(',')])
+
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
@@ -54,7 +75,6 @@ export default function CartPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* ── Page header ── */}
       <div className="flex items-center gap-3 mb-6">
         <Link to="/" className="p-2 rounded-full hover:bg-sky-50 text-slate-500 transition-colors">
           <ArrowLeft className="w-5 h-5" />
@@ -66,11 +86,7 @@ export default function CartPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-
-        {/* ── Left: Cart items ── */}
         <div className="lg:col-span-2 flex flex-col gap-3">
-
-          {/* Rx warning banner (shows if any Rx item missing prescription) */}
           <AnimatePresence>
             {rxMissingPrescription.length > 0 && (
               <motion.div
@@ -95,7 +111,6 @@ export default function CartPage() {
             )}
           </AnimatePresence>
 
-          {/* Cart item list */}
           <AnimatePresence mode="popLayout">
             {items.map((item) => (
               <CartItemCard key={item.id} item={item} />
@@ -103,12 +118,10 @@ export default function CartPage() {
           </AnimatePresence>
         </div>
 
-        {/* ── Right: Order summary ── */}
         <div className="lg:col-span-1">
           <div className="bg-[#f5f5f7] rounded-[32px] p-8 sticky top-24">
             <h2 className="font-bold text-slate-900 text-xl mb-6 tracking-tight">Tóm tắt đơn hàng</h2>
 
-            {/* Price rows */}
             <div className="flex flex-col gap-4 text-[15px]">
               <div className="flex justify-between text-slate-500">
                 <span>Tạm tính ({items.reduce((s, i) => s + i.quantity, 0)} sản phẩm)</span>
@@ -127,7 +140,6 @@ export default function CartPage() {
                 </p>
               )}
 
-              {/* Vibe 4: Points Ecosystem */}
               <div className="mt-2 p-3 bg-blue-50/50 border border-blue-100 rounded-xl flex items-center justify-between">
                 <div>
                   <p className="text-[13px] font-bold text-blue-800">Dùng điểm thưởng</p>
@@ -155,7 +167,6 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Prescription status summary */}
             {items.some((i) => i.type === 'rx') && (
               <div className="mt-6 p-4 rounded-2xl bg-white/60">
                 <p className="text-[13px] font-bold text-slate-700 mb-3 uppercase tracking-wider">Trạng thái đơn thuốc:</p>
@@ -178,11 +189,9 @@ export default function CartPage() {
               </div>
             )}
 
-            {/* ── Checkout button (disabled if Rx missing) ── */}
             <div className="mt-5">
               <AnimatePresence mode="wait">
                 {canCheckout ? (
-                  /* ── UNLOCKED: pulse glow ring animation ── */
                   <motion.div
                     key="checkout-enabled"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -191,7 +200,6 @@ export default function CartPage() {
                     transition={{ type: 'spring', damping: 18, stiffness: 280 }}
                     className="relative"
                   >
-                    {/* Outer glow ring — pulses continuously */}
                     <motion.div
                       className="absolute inset-0 rounded-xl bg-sky-400 opacity-0"
                       animate={{
@@ -225,7 +233,6 @@ export default function CartPage() {
                     </motion.p>
                   </motion.div>
                 ) : (
-                  /* ── LOCKED: greyed out + hint ── */
                   <motion.div
                     key="checkout-disabled"
                     initial={{ opacity: 0 }}
@@ -251,7 +258,6 @@ export default function CartPage() {
               </AnimatePresence>
             </div>
 
-            {/* Trust badges */}
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Thanh toán bảo mật & an toàn</span>
@@ -260,13 +266,12 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* ── Frequently Bought Together ── */}
-      {/* associationRulesData: kết quả data mining từ BE, tạm dùng mock */}
       <FrequentlyBoughtTogether
-        associationRulesData={getRulesForProducts(items.map((i) => i.id))}
+        associationRulesData={rules}
         currentProductIds={items.map((i) => i.id)}
         title="Có thể bạn cũng cần"
         maxItems={8}
+        isLoading={rulesLoading}
       />
     </div>
   )

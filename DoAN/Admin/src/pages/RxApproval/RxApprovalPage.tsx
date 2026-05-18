@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Eye, X, CheckCircle, XCircle, Plus, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDisplayId } from '../../utils/formatHelpers';
+import axiosClient from '../../api/axiosClient';
 
 const STATUS_COLORS = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -15,34 +17,67 @@ const STATUS_LABELS = {
   REJECTED: 'Từ chối',
 };
 
-const MOCK_CATALOG = [
-  { id: 'rx-001', name: 'Amoxicillin 500mg', price: 85000 },
-  { id: 'rx-002', name: 'Metformin 850mg', price: 120000 },
-  { id: 'rx-003', name: 'Lisinopril 10mg', price: 95000 },
-  { id: 'otc-001', name: 'Paracetamol 500mg', price: 25000 },
-];
-
 export default function RxApprovalPage() {
   const { 
     rxRequests: requests, selectedRequest, builderItems, 
     selectRequest, addBuilderItem, removeBuilderItem, updateBuilderItemQty, 
-    approveRx, rejectRx, clearBuilder 
+    approveRx, rejectRx, clearBuilder, fetchRxRequests, isLoadingRx, rxError 
   } = useAdminStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [catalogSearch, setCatalogSearch] = useState('');
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [catalog, setCatalog] = useState<any[]>([]);
 
-  const filteredRequests = requests.filter(req => 
-    req.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.customerPhone.includes(searchTerm)
-  );
+  useEffect(() => {
+    fetchRxRequests();
+  }, [fetchRxRequests]);
 
-  const filteredCatalog = MOCK_CATALOG.filter(p => 
-    p.name.toLowerCase().includes(catalogSearch.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      if (catalogSearch.length > 1) {
+        try {
+          const res: any = await axiosClient.get(`/products?q=${catalogSearch}`);
+          setCatalog(res.data || res || []);
+        } catch (error) {
+          console.error('Error fetching catalog:', error);
+        }
+      } else {
+        setCatalog([]);
+      }
+    };
+    const delayDebounceFn = setTimeout(() => {
+      fetchCatalog();
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [catalogSearch]);
+
+  const filteredRequests = requests.filter(req => {
+    const searchLower = searchTerm.toLowerCase();
+    const idMatch = req._id?.toLowerCase().includes(searchLower);
+    const codeMatch = req.prescriptionCode?.toLowerCase().includes(searchLower);
+    const phoneMatch = req.customerPhone?.includes(searchTerm);
+    return idMatch || codeMatch || phoneMatch;
+  });
 
   const totalAmount = builderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  if (isLoadingRx) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (rxError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-red-600">
+        <p>{rxError}</p>
+        <button onClick={() => fetchRxRequests()} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Thử lại</button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 relative">
@@ -77,13 +112,15 @@ export default function RxApprovalPage() {
             </thead>
             <tbody>
               {filteredRequests.map((req) => (
-                <tr key={req.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-                  <td className="p-4 font-medium text-blue-600">{req.id}</td>
-                  <td className="p-4 text-gray-600">{req.submittedAt}</td>
+                <tr key={req._id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                  <td className="p-4 font-medium text-blue-600">
+                    {req.prescriptionCode || formatDisplayId(req._id, 'RX')}
+                  </td>
+                  <td className="p-4 text-gray-600">{new Date(req.submittedAt).toLocaleString('vi-VN')}</td>
                   <td className="p-4 text-gray-800">{req.customerPhone}</td>
                   <td className="p-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[req.status]}`}>
-                      {STATUS_LABELS[req.status]}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[req.status] || STATUS_COLORS.PENDING}`}>
+                      {STATUS_LABELS[req.status] || STATUS_LABELS.PENDING}
                     </span>
                   </td>
                   <td className="p-4 text-right">
@@ -128,7 +165,6 @@ export default function RxApprovalPage() {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="relative w-full max-w-6xl bg-white h-full shadow-2xl flex flex-col md:flex-row overflow-hidden"
             >
-              {/* Nửa trái: ImageViewer */}
               <div className="w-full md:w-1/2 bg-gray-100 border-r border-gray-200 flex flex-col h-[40vh] md:h-full">
                 <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
                   <h3 className="font-semibold text-gray-800">Ảnh đơn thuốc</h3>
@@ -150,12 +186,11 @@ export default function RxApprovalPage() {
                 </div>
               </div>
 
-              {/* Nửa phải: PrescriptionBuilder */}
               <div className="w-full md:w-1/2 bg-white flex flex-col h-[60vh] md:h-full">
                 <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
                   <div>
                     <h3 className="font-semibold text-gray-800 text-lg">PrescriptionBuilder</h3>
-                    <p className="text-sm text-gray-500">Yêu cầu: {selectedRequest.id}</p>
+                    <p className="text-sm text-gray-500">Yêu cầu: {selectedRequest.prescriptionCode || formatDisplayId(selectedRequest._id, 'RX')}</p>
                   </div>
                   <button onClick={clearBuilder} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
                     <X className="w-6 h-6" />
@@ -163,7 +198,6 @@ export default function RxApprovalPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                  {/* Search Catalog */}
                   <div className="space-y-3">
                     <label className="text-sm font-medium text-gray-700">Tìm thuốc trong kho</label>
                     <div className="relative">
@@ -178,11 +212,11 @@ export default function RxApprovalPage() {
                     </div>
                     {catalogSearch && (
                       <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden max-h-40 overflow-y-auto">
-                        {filteredCatalog.map(item => (
-                          <div key={item.id} className="flex justify-between items-center p-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                        {catalog.map(item => (
+                          <div key={item._id} className="flex justify-between items-center p-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-0">
                             <div>
                               <div className="text-sm font-medium text-gray-800">{item.name}</div>
-                              <div className="text-xs text-blue-600 font-semibold">{item.price.toLocaleString('vi-VN')}đ</div>
+                              <div className="text-xs text-blue-600 font-semibold">{item.price?.toLocaleString('vi-VN')}đ</div>
                             </div>
                             <button 
                               onClick={() => addBuilderItem(item)}
@@ -192,11 +226,11 @@ export default function RxApprovalPage() {
                             </button>
                           </div>
                         ))}
+                        {catalog.length === 0 && <div className="p-2 text-center text-sm text-gray-500">Không tìm thấy sản phẩm.</div>}
                       </div>
                     )}
                   </div>
 
-                  {/* Selected Items */}
                   <div className="space-y-3">
                     <label className="text-sm font-medium text-gray-700">Danh sách thuốc xuất bán</label>
                     {builderItems.length === 0 ? (
@@ -206,7 +240,7 @@ export default function RxApprovalPage() {
                     ) : (
                       <div className="space-y-2">
                         {builderItems.map(item => (
-                          <div key={item.id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                          <div key={item._id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
                             <div className="flex-1">
                               <div className="text-sm font-medium text-gray-800">{item.name}</div>
                             </div>
@@ -215,7 +249,7 @@ export default function RxApprovalPage() {
                                 type="number" 
                                 min="1"
                                 value={item.quantity}
-                                onChange={(e) => updateBuilderItemQty(item.id, parseInt(e.target.value) || 1)}
+                                onChange={(e) => updateBuilderItemQty(item._id, parseInt(e.target.value) || 1)}
                                 className="w-16 px-2 py-1 text-center border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500"
                               />
                             </div>
@@ -223,7 +257,7 @@ export default function RxApprovalPage() {
                               {(item.price * item.quantity).toLocaleString('vi-VN')}đ
                             </div>
                             <button 
-                              onClick={() => removeBuilderItem(item.id)}
+                              onClick={() => removeBuilderItem(item._id)}
                               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -235,7 +269,6 @@ export default function RxApprovalPage() {
                   </div>
                 </div>
 
-                {/* Footer Action */}
                 <div className="p-4 border-t border-gray-200 bg-gray-50 shrink-0">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-600 font-medium">Tổng tiền báo giá:</span>
@@ -243,13 +276,13 @@ export default function RxApprovalPage() {
                   </div>
                   <div className="flex gap-3">
                     <button 
-                      onClick={() => rejectRx(selectedRequest.id)}
+                      onClick={() => rejectRx(selectedRequest._id)}
                       className="flex-1 px-4 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors"
                     >
                       Từ chối toa thuốc
                     </button>
                     <button 
-                      onClick={() => approveRx(selectedRequest.id)}
+                      onClick={() => approveRx(selectedRequest._id)}
                       disabled={builderItems.length === 0}
                       className="flex-1 px-4 py-2.5 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg font-medium transition-colors shadow-sm"
                     >

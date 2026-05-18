@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, ShoppingCart, User, Pill,
-  Menu, X, ChevronDown, Bell, MapPin
+  Menu, X, ChevronDown, Bell, MapPin, LogOut
 } from 'lucide-react'
 import { useCartStore } from '../../store/cartStore'
+import { useAuthStore } from '../../store/authStore'
 
 // --- Search suggestions mock ---
 const SUGGESTIONS = [
@@ -19,6 +20,7 @@ const SUGGESTIONS = [
 export default function Navbar() {
   const navigate = useNavigate()
   const totalCount = useCartStore((s) => s.totalCount)
+  const { user, logout } = useAuthStore()
 
   const [query, setQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -156,15 +158,42 @@ export default function Navbar() {
             </button>
 
             {/* User */}
-            <Link
-              to="/profile"
-              id="btn-user"
-              className="flex items-center gap-1.5 p-2 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <User className="w-5 h-5" />
-              <span className="hidden lg:block text-sm font-medium">Đăng nhập</span>
-              <ChevronDown className="hidden lg:block w-3.5 h-3.5" />
-            </Link>
+            <div className="relative group">
+              <Link
+                to={user ? "/profile" : "/auth"}
+                id="btn-user"
+                className="flex items-center gap-1.5 p-2 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <User className="w-5 h-5" />
+                <span className="hidden lg:block text-sm font-medium">
+                  {user ? user.fullName || 'Tài khoản' : 'Đăng nhập'}
+                </span>
+                <ChevronDown className="hidden lg:block w-3.5 h-3.5" />
+              </Link>
+
+              {/* Dropdown for logged in user */}
+              {user && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <div className="p-3 border-b border-slate-100">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{user.fullName}</p>
+                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  </div>
+                  <div className="p-2">
+                    <Link to="/profile" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Hồ sơ cá nhân</Link>
+                    <Link to="/orders" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Đơn hàng của tôi</Link>
+                    <button 
+                      onClick={() => {
+                        logout();
+                        navigate('/');
+                      }}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <LogOut className="w-4 h-4" /> Đăng xuất
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Cart */}
             <Link

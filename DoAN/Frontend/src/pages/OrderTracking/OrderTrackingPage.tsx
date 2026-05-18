@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Phone, MapPin, Clock, Star,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import StepperProgress, { StepKey, ORDER_STEPS } from '../../components/order/StepperProgress'
 import TypeBadge from '../../components/common/TypeBadge'
+import { useAuthStore } from '../../store/authStore'
 
 // ── Mock order data ─────────────────────────────────
 export interface MockOrder {
@@ -98,8 +99,20 @@ function fmtTime(iso: string) {
 const STEPS_LIST: StepKey[] = ['pending', 'packing', 'shipping', 'done']
 
 export default function OrderTrackingPage() {
+  const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const location = useLocation()
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth', { replace: true, state: { from: { pathname: location.pathname } } })
+    }
+  }, [user, navigate, location])
+
   const { id } = useParams<{ id: string }>()
   const order = MOCK_ORDERS[id ?? ''] ?? MOCK_ORDERS['ORD-001']
+
+  if (!user) return null
 
   // Demo: allow clicking through steps
   const [demoStep, setDemoStep] = useState<StepKey>(order.status)

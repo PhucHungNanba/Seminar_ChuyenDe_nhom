@@ -4,6 +4,20 @@ from services.product_client import check_medicine_availability
 
 router = APIRouter()
 
+
+@router.get("/recommendations")
+async def recommendations(productIds: str = ""):
+    # Simple placeholder implementation to avoid 500s when AI microservice
+    # is not yet providing real association rules. Returns empty list.
+    try:
+        ids = [p for p in productIds.split(',') if p]
+        return {
+            "success": True,
+            "data": []
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/analyze-prescription")
 async def analyze_prescription(file: UploadFile = File(...)):
     if not file.content_type.startswith("image/"):

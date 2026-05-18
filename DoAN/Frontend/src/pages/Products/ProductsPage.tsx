@@ -21,8 +21,10 @@ import {
   AlertCircle,
   Eye,
 } from 'lucide-react'
-import { ALL_PRODUCTS, type Product, type ProductForm } from '../../data/allProducts'
+import { type Product, type ProductForm } from '../../types'
 import { useCartStore } from '../../store/cartStore'
+import { useFeaturedStore } from '../../store/featuredStore'
+import { formatDisplayId } from '../../utils/formatHelpers'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & constants
@@ -82,18 +84,28 @@ function ProductCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false)
   const navigate = useNavigate()
 
+  // Xử lý lấy ảnh từ array
+  const imgUrl = (product.images && product.images.length > 0) ? product.images[0] : 'https://placehold.co/320x320/e2e8f0/64748b?text=No+Image'
+
   function handleAdd() {
     addItem({
-      id: product.id,
+      id: product._id,
       name: product.name,
       type: product.type,
       price: product.price,
       quantity: 1,
-      imageUrl: product.imageUrl,
+      imageUrl: imgUrl,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)
   }
+
+  // Fallback rating
+  const finalRating = product.rating || 5.0
+  const finalReviewCount = product.reviewCount || 0
+  
+  // Tính inStock dựa vào field tồn kho
+  const inStock = product.stock_quantity ? product.stock_quantity > 0 : true
 
   return (
     <motion.div
@@ -108,7 +120,7 @@ function ProductCard({ product }: { product: Product }) {
       {/* Image */}
       <div className="relative bg-white aspect-square flex items-center justify-center p-4 border-b border-gray-100">
         <img
-          src={product.imageUrl}
+          src={imgUrl}
           alt={product.name}
           className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
@@ -128,7 +140,7 @@ function ProductCard({ product }: { product: Product }) {
             {product.badge}
           </span>
         )}
-        {!product.inStock && (
+        {!inStock && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
             <span className="bg-slate-700 text-white text-xs font-semibold px-3 py-1 rounded-full">
               Hết hàng
@@ -141,13 +153,16 @@ function ProductCard({ product }: { product: Product }) {
       <div className="p-3 flex flex-col flex-1 text-left">
         <div className="flex items-center gap-1.5 mb-2">
           <span className="text-[11px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-            {FORM_LABELS[product.form]}
+            {FORM_LABELS[product.form] || product.form}
+          </span>
+          <span className="text-[10px] text-gray-400 font-mono">
+            {formatDisplayId(product._id, 'MED')}
           </span>
         </div>
 
         <Link
-          to={`/products/${product.id}`}
-          id={`products-card-${product.id}`}
+          to={`/products/${product._id}`}
+          id={`products-card-${product._id}`}
           className="font-bold text-gray-800 text-sm leading-snug hover:text-blue-600 transition-colors line-clamp-2 mb-1"
         >
           {product.name}
@@ -156,37 +171,37 @@ function ProductCard({ product }: { product: Product }) {
         <p className="text-xs text-slate-500 line-clamp-2 mb-3 flex-1">{product.description}</p>
 
         <div className="flex items-center gap-1.5 mb-3">
-          <StarRating rating={product.rating} />
+          <StarRating rating={finalRating} />
           <span className="text-xs text-slate-400">
-            {product.rating} ({product.reviewCount.toLocaleString()})
+            {finalRating} ({finalReviewCount.toLocaleString()})
           </span>
         </div>
 
         <div className="flex flex-col mt-auto pt-3 gap-3">
           <div>
             <p className="text-lg font-bold text-blue-700">
-              {product.price.toLocaleString('vi-VN')}đ
+              {product.price?.toLocaleString('vi-VN')}đ
             </p>
             <p className="text-[11px] text-gray-500 mt-0.5">/ {product.unit}</p>
           </div>
 
           <div className="flex flex-col gap-2 mt-1">
             <button
-              onClick={() => navigate(`/products/${product.id}`)}
+              onClick={() => navigate(`/products/${product._id}`)}
               className="w-full py-2 rounded-lg text-sm font-semibold transition-colors border border-blue-600 text-blue-600 hover:bg-blue-50 flex items-center justify-center"
             >
               Xem chi tiết
             </button>
             <motion.button
-              id={`products-add-${product.id}`}
+              id={`products-add-${product._id}`}
               onClick={() => {
                 if (product.type === 'rx') {
-                  navigate(`/products/${product.id}`)
+                  navigate(`/products/${product._id}`)
                   return
                 }
                 handleAdd()
               }}
-              disabled={!product.inStock}
+              disabled={!inStock}
               whileTap={{ scale: 0.98 }}
               className="w-full py-2 rounded-lg text-sm font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
@@ -355,7 +370,6 @@ function MobileDrawer({
   onClose: () => void
   children: React.ReactNode
 }) {
-  // Lock body scroll when open
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
@@ -366,7 +380,6 @@ function MobileDrawer({
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="drawer-backdrop"
             initial={{ opacity: 0 }}
@@ -376,7 +389,6 @@ function MobileDrawer({
             onClick={onClose}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
           />
-          {/* Panel slides from left */}
           <motion.aside
             key="drawer-panel"
             initial={{ x: '-100%' }}
@@ -385,7 +397,6 @@ function MobileDrawer({
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 shadow-2xl flex flex-col"
           >
-            {/* Drawer header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <span className="font-semibold text-slate-800">Bộ lọc sản phẩm</span>
               <button
@@ -396,11 +407,7 @@ function MobileDrawer({
                 <X className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
-
-            {/* Apply button */}
             <div className="px-5 py-4 border-t border-slate-100">
               <button
                 onClick={onClose}
@@ -421,30 +428,32 @@ function MobileDrawer({
 // ProductsPage
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ProductsPage() {
-  // ── State ─────────────────────────────────────────────────
+  const { products, isLoading, error, fetchProducts } = useFeaturedStore()
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('default')
   const [filters, setFilters] = useState<Filters>({ types: new Set(), forms: new Set() })
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  // ── Sync URL query params vào state khi mount / URL thay đổi ──
+  // Gọi API lấy dữ liệu khi mount
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
   const [searchParams] = useSearchParams()
   useEffect(() => {
     const q    = searchParams.get('q')
     const type = searchParams.get('type') as 'otc' | 'rx' | null
     const form = searchParams.get('form') as ProductForm | null
 
-    if (q)    setQuery(q)
+    if (q) setQuery(q)
     if (type && (type === 'otc' || type === 'rx')) {
       setFilters((prev) => ({ ...prev, types: new Set([type]) }))
     }
     if (form && ['tablet','capsule','liquid','device'].includes(form)) {
       setFilters((prev) => ({ ...prev, forms: new Set([form]) }))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  // ── Toggle helpers ─────────────────────────────────────────
   const toggleType = useCallback((t: 'otc' | 'rx') => {
     setFilters((prev) => {
       const next = new Set(prev.types)
@@ -465,71 +474,79 @@ export default function ProductsPage() {
     setFilters({ types: new Set(), forms: new Set() })
   }, [])
 
-  // ── Derived: filtered + sorted list ───────────────────────
   const results = useMemo(() => {
-    let list = ALL_PRODUCTS
+    let list = products || []
 
-    // 1. Search
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.genericName.toLowerCase().includes(q) ||
-          p.manufacturer.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q))
+          p.name?.toLowerCase().includes(q) ||
+          p.genericName?.toLowerCase().includes(q) ||
+          p.manufacturer?.toLowerCase().includes(q) ||
+          p.tags?.some((t) => t.toLowerCase().includes(q))
       )
     }
 
-    // 2. Type filter
     if (filters.types.size > 0) {
       list = list.filter((p) => filters.types.has(p.type))
     }
 
-    // 3. Form filter
     if (filters.forms.size > 0) {
       list = list.filter((p) => filters.forms.has(p.form))
     }
 
-    // 4. Sort
     const sorted = [...list]
     switch (sortKey) {
       case 'price_asc':
-        sorted.sort((a, b) => a.price - b.price)
+        sorted.sort((a, b) => (a.price || 0) - (b.price || 0))
         break
       case 'price_desc':
-        sorted.sort((a, b) => b.price - a.price)
+        sorted.sort((a, b) => (b.price || 0) - (a.price || 0))
         break
       case 'rating_desc':
-        sorted.sort((a, b) => b.rating - a.rating)
+        sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
         break
       case 'name_asc':
-        sorted.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+        sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'))
         break
     }
     return sorted
-  }, [query, filters, sortKey])
+  }, [products, query, filters, sortKey])
 
   const activeFilterCount = filters.types.size + filters.forms.size
 
-  // ── Render ─────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-red-500">
+        <AlertCircle className="w-8 h-8 mb-2" />
+        <p>{error}</p>
+        <button onClick={() => fetchProducts()} className="mt-4 px-4 py-2 bg-sky-500 text-white rounded">Thử lại</button>
+      </div>
+    )
+  }
+
   return (
     <>
-      {/* Mobile filter drawer */}
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <SidebarContent
           filters={filters}
           onToggleType={toggleType}
           onToggleForm={toggleForm}
           onReset={resetFilters}
-          products={ALL_PRODUCTS}
+          products={products}
         />
       </MobileDrawer>
 
       <div className="flex gap-7">
-        {/* ════════════════════════════════════════════════
-            Desktop Sidebar — hidden on mobile
-            ════════════════════════════════════════════════ */}
         <aside className="hidden lg:block w-64 shrink-0">
           <div className="sticky top-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SidebarContent
@@ -537,17 +554,12 @@ export default function ProductsPage() {
               onToggleType={toggleType}
               onToggleForm={toggleForm}
               onReset={resetFilters}
-              products={ALL_PRODUCTS}
+              products={products}
             />
           </div>
         </aside>
 
-        {/* ════════════════════════════════════════════════
-            Main content
-            ════════════════════════════════════════════════ */}
         <div className="flex-1 min-w-0">
-
-          {/* ── Page header ── */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-slate-800">Danh mục thuốc</h1>
             <p className="text-slate-500 text-sm mt-1">
@@ -556,9 +568,7 @@ export default function ProductsPage() {
             </p>
           </div>
 
-          {/* ── Toolbar: SearchBar + Sort + Mobile filter btn ── */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
-            {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
@@ -579,7 +589,6 @@ export default function ProductsPage() {
               )}
             </div>
 
-            {/* Sort select */}
             <div className="relative">
               <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <select
@@ -595,7 +604,6 @@ export default function ProductsPage() {
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
 
-            {/* Mobile filter button */}
             <button
               id="mobile-filter-btn"
               onClick={() => setDrawerOpen(true)}
@@ -611,7 +619,6 @@ export default function ProductsPage() {
             </button>
           </div>
 
-          {/* Active filter pills */}
           {activeFilterCount > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
@@ -648,7 +655,6 @@ export default function ProductsPage() {
             </motion.div>
           )}
 
-          {/* ── Product grid ── */}
           <AnimatePresence mode="popLayout">
             {results.length > 0 ? (
               <motion.div
@@ -661,7 +667,7 @@ export default function ProductsPage() {
                 }}
               >
                 {results.map((p) => (
-                  <ProductCard key={p.id} product={p} />
+                  <ProductCard key={p._id} product={p} />
                 ))}
               </motion.div>
             ) : (

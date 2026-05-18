@@ -1,38 +1,4 @@
-/**
- * FrequentlyBoughtTogether
- *
- * Component gợi ý "Thường được mua cùng nhau" dựa trên kết quả
- * Association Rule Mining (Apriori / FP-Growth) từ Backend.
- *
- * Props:
- *  - associationRulesData : Mảng AssociationRule[] từ BE (hoặc mock).
- *                           Backend truyền kết quả khai phá dữ liệu vào đây.
- *  - currentProductIds    : ID sản phẩm đang xem / có trong giỏ — để loại khỏi gợi ý.
- *  - title                : Tiêu đề section (có default)
- *  - maxItems             : Số gợi ý tối đa hiển thị (default: 8)
- *
- * Cách dùng:
- *  // ProductDetailPage
- *  <FrequentlyBoughtTogether
- *    associationRulesData={getRulesForProducts([medicine.id])}
- *    currentProductIds={[medicine.id]}
- *  />
- *
- *  // CartPage
- *  <FrequentlyBoughtTogether
- *    associationRulesData={getRulesForProducts(items.map(i => i.id))}
- *    currentProductIds={items.map(i => i.id)}
- *    title="Có thể bạn cũng cần"
- *  />
- *
- * Backend integration (TODO):
- *  Thay `getRulesForProducts(...)` bằng:
- *  const { data } = useQuery(['fbt', productId], () =>
- *    fetch(`/api/recommendations?productId=${productId}`).then(r => r.json())
- *  )
- */
-
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -43,32 +9,20 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react'
-import { type AssociationRule } from '../../data/mockAssociationRules'
+import { type AssociationRule } from '../../types'
 import { useCartStore } from '../../store/cartStore'
 import TypeBadge from '../common/TypeBadge'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Props interface — cấu trúc rõ ràng để BE dễ tích hợp sau này
-// ─────────────────────────────────────────────────────────────────────────────
 interface FrequentlyBoughtTogetherProps {
-  /** Kết quả khai phá dữ liệu từ Backend (Association Rules) */
-  associationRulesData: AssociationRule[]
-  /** ID sản phẩm đang xem / trong giỏ — loại bỏ khỏi gợi ý */
+  associationRulesData?: AssociationRule[]
   currentProductIds?: string[]
-  /** Tiêu đề section — tuỳ chỉnh theo context */
   title?: string
-  /** Số lượng gợi ý tối đa hiển thị */
   maxItems?: number
-  /** Loading state — khi đang fetch từ BE */
   isLoading?: boolean
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Confidence badge
-// ─────────────────────────────────────────────────────────────────────────────
 function ConfidencePill({ confidence }: { confidence: number }) {
   const pct = Math.round(confidence * 100)
-  // Màu theo ngưỡng confidence
   const style =
     pct >= 70
       ? { bg: '#dcfce7', text: '#16a34a' }
@@ -86,22 +40,21 @@ function ConfidencePill({ confidence }: { confidence: number }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Single product card in the slider
-// ─────────────────────────────────────────────────────────────────────────────
 function FbtCard({ rule }: { rule: AssociationRule }) {
   const addItem = useCartStore((s) => s.addItem)
   const [added, setAdded] = useState(false)
   const { consequent } = rule
+  
+  const imgUrl = (consequent.images && consequent.images.length > 0) ? consequent.images[0] : 'https://placehold.co/320x320/e2e8f0/64748b?text=No+Image'
 
   function handleAdd() {
     addItem({
-      id: consequent.id,
+      id: consequent._id,
       name: consequent.name,
       type: consequent.type,
       price: consequent.price,
       quantity: 1,
-      imageUrl: consequent.imageUrl,
+      imageUrl: imgUrl,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)
@@ -115,15 +68,13 @@ function FbtCard({ rule }: { rule: AssociationRule }) {
       whileHover={{ y: -3 }}
       className="group flex-none w-44 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col"
     >
-      {/* Image */}
       <div className="relative bg-slate-50 overflow-hidden">
         <img
-          src={consequent.imageUrl}
+          src={imgUrl}
           alt={consequent.name}
           className="w-full h-36 object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        {/* Lift indicator — mức độ liên kết */}
         {rule.lift >= 2.5 && (
           <div className="absolute top-2 right-2">
             <span className="flex items-center gap-0.5 text-[9px] font-bold bg-sky-500 text-white px-1.5 py-0.5 rounded-full">
@@ -132,31 +83,19 @@ function FbtCard({ rule }: { rule: AssociationRule }) {
             </span>
           </div>
         )}
-        {consequent.badge && (
-          <span
-            className="absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-            style={{ background: '#fef3c7', color: '#d97706' }}
-          >
-            {consequent.badge}
-          </span>
-        )}
       </div>
 
-      {/* Body */}
       <div className="p-3 flex flex-col flex-1 gap-2">
         <TypeBadge type={consequent.type} size="sm" />
 
         <Link
-          to={`/products/${consequent.id}`}
-          id={`fbt-product-${consequent.id}`}
+          to={`/products/${consequent._id}`}
+          id={`fbt-product-${consequent._id}`}
           className="text-xs font-semibold text-slate-800 hover:text-sky-600 transition-colors line-clamp-2 leading-snug"
         >
           {consequent.name}
         </Link>
 
-        <p className="text-[10px] text-slate-400 -mt-1">{consequent.manufacturer}</p>
-
-        {/* Confidence pill + Reason */}
         <div className="flex flex-col gap-1">
           <ConfidencePill confidence={rule.confidence} />
           {rule.reason && (
@@ -166,18 +105,16 @@ function FbtCard({ rule }: { rule: AssociationRule }) {
           )}
         </div>
 
-        {/* Price + CTA */}
         <div className="mt-auto pt-1 flex items-center justify-between gap-1">
           <div>
             <p className="text-sm font-bold text-sky-700">
-              {consequent.price.toLocaleString('vi-VN')}đ
+              {consequent.price?.toLocaleString('vi-VN')}đ
             </p>
-            <p className="text-[10px] text-slate-400 leading-tight">{consequent.unit}</p>
           </div>
 
           {consequent.type === 'rx' ? (
             <Link
-              to={`/products/${consequent.id}`}
+              to={`/products/${consequent._id}`}
               className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors shrink-0"
             >
               <Package className="w-3 h-3" />
@@ -185,7 +122,7 @@ function FbtCard({ rule }: { rule: AssociationRule }) {
             </Link>
           ) : (
             <motion.button
-              id={`fbt-add-${consequent.id}`}
+              id={`fbt-add-${consequent._id}`}
               onClick={handleAdd}
               whileTap={{ scale: 0.93 }}
               className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-1.5 rounded-lg text-white shrink-0 transition-all duration-200"
@@ -205,9 +142,6 @@ function FbtCard({ rule }: { rule: AssociationRule }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Skeleton loader — hiển thị khi isLoading = true
-// ─────────────────────────────────────────────────────────────────────────────
 function FbtSkeleton() {
   return (
     <div className="flex gap-4 overflow-hidden">
@@ -229,11 +163,8 @@ function FbtSkeleton() {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main Component
-// ─────────────────────────────────────────────────────────────────────────────
 export default function FrequentlyBoughtTogether({
-  associationRulesData,
+  associationRulesData = [],
   currentProductIds = [],
   title = 'Thường được mua cùng nhau',
   maxItems = 8,
@@ -243,18 +174,16 @@ export default function FrequentlyBoughtTogether({
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
 
-  // Lọc và giới hạn số lượng gợi ý
   const rules = associationRulesData
-    .filter((r) => !currentProductIds.includes(r.consequent.id))
+    .filter((r) => r.consequent && !currentProductIds.includes(r.consequent._id))
     .slice(0, maxItems)
 
-  // Không render nếu không có gợi ý (và không đang load)
   if (!isLoading && rules.length === 0) return null
 
   function scroll(dir: 'left' | 'right') {
     const el = scrollRef.current
     if (!el) return
-    const amount = 220 * 2 // scroll 2 cards
+    const amount = 220 * 2
     el.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' })
   }
 
@@ -274,29 +203,24 @@ export default function FrequentlyBoughtTogether({
       transition={{ duration: 0.4 }}
       className="mt-10 bg-gradient-to-br from-sky-50 to-white rounded-3xl border border-sky-100 p-6"
     >
-      {/* ── Section header ── */}
       <div className="flex items-start justify-between mb-5 gap-4">
         <div className="flex items-center gap-2.5">
-          {/* Icon */}
           <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
             <Sparkles className="w-5 h-5 text-sky-500" />
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-800">{title}</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Dựa trên hành vi mua sắm của{' '}
-              <span className="text-sky-500 font-medium">500.000+ khách hàng</span>
+              Dựa trên hành vi mua sắm của <span className="text-sky-500 font-medium">500.000+ khách hàng</span>
             </p>
           </div>
         </div>
 
-        {/* Scroll arrows — desktop */}
         <div className="hidden sm:flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
             className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-sky-50 hover:border-sky-300 hover:text-sky-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            aria-label="Cuộn trái"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -304,14 +228,12 @@ export default function FrequentlyBoughtTogether({
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
             className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-sky-50 hover:border-sky-300 hover:text-sky-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            aria-label="Cuộn phải"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* ── Horizontal slider ── */}
       {isLoading ? (
         <FbtSkeleton />
       ) : (
@@ -324,7 +246,7 @@ export default function FrequentlyBoughtTogether({
           <AnimatePresence>
             {rules.map((rule, i) => (
               <motion.div
-                key={rule.ruleId}
+                key={rule._id || i}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.06 }}
@@ -336,7 +258,6 @@ export default function FrequentlyBoughtTogether({
         </div>
       )}
 
-      {/* ── Data mining footnote ── */}
       <p className="text-[10px] text-slate-300 mt-3 text-right italic">
         Gợi ý được tính toán bằng thuật toán Association Rule Mining
         (confidence ≥ 44%, lift ≥ 1.8)

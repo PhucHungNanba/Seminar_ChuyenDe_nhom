@@ -1,154 +1,76 @@
-import { create } from 'zustand'
+import { create } from 'zustand';
+import axiosClient from '../api/axiosClient';
 
+// Type khớp với những gì ProductCard cần
 export interface FeaturedProduct {
-  id: string
-  name: string
-  genericName: string
-  manufacturer: string
-  type: 'otc' | 'rx'
-  price: number
-  unit: string
-  imageUrl: string
-  description: string
-  rating: number
-  reviewCount: number
-  inStock: boolean
-  tags: string[]
-  badge?: string // e.g. "Bán chạy", "Mới", "Sale"
+  _id: string;
+  id: string;           // alias của _id để tương thích
+  name: string;
+  description: string;
+  price: number;
+  quantity: number;
+  inStock: boolean;     // derived từ quantity > 0
+  images: string[];
+  imageUrl: string;     // lấy images[0] hoặc placeholder
+  type: 'otc' | 'rx';
+  manufacturer?: string;
+  unit?: string;
+  badge?: string;
+  rating?: number;
+  symptomTags?: string[];
 }
+
+// Giữ lại export alias Product để tương thích với code cũ
+export type { FeaturedProduct as Product };
 
 interface FeaturedStore {
-  products: FeaturedProduct[]
+  products: FeaturedProduct[];
+  isLoading: boolean;
+  error: string | null;
+  fetchProducts: () => Promise<void>;
 }
 
-const FEATURED_PRODUCTS: FeaturedProduct[] = [
-  {
-    id: 'otc-001',
-    name: 'Paracetamol 500mg',
-    genericName: 'Acetaminophen',
-    manufacturer: 'Dược Hậu Giang',
-    type: 'otc',
-    price: 25000,
-    unit: 'hộp 100 viên',
-    imageUrl: 'https://placehold.co/320x320/e0f2fe/0ea5e9?text=Paracetamol',
-    description: 'Hạ sốt, giảm đau nhức đầu, đau cơ thông thường.',
-    rating: 4.7,
-    reviewCount: 1248,
-    inStock: true,
-    tags: ['Hạ sốt', 'Giảm đau'],
-    badge: 'Bán chạy',
-  },
-  {
-    id: 'rx-001',
-    name: 'Amoxicillin 500mg',
-    genericName: 'Amoxicillin Trihydrate',
-    manufacturer: 'Pymepharco',
-    type: 'rx',
-    price: 85000,
-    unit: 'hộp 2 vỉ × 10 viên',
-    imageUrl: 'https://placehold.co/320x320/fef3c7/f59e0b?text=Amoxicillin',
-    description: 'Kháng sinh điều trị nhiễm khuẩn đường hô hấp, tiết niệu.',
-    rating: 4.5,
-    reviewCount: 832,
-    inStock: true,
-    tags: ['Kháng sinh', 'Kê đơn'],
-  },
-  {
-    id: 'otc-002',
-    name: 'Vitamin C 1000mg',
-    genericName: 'Ascorbic Acid',
-    manufacturer: 'Traphaco',
-    type: 'otc',
-    price: 45000,
-    unit: 'hộp 30 viên sủi',
-    imageUrl: 'https://placehold.co/320x320/d1fae5/10b981?text=Vitamin+C',
-    description: 'Bổ sung vitamin C, tăng cường miễn dịch, chống oxy hóa.',
-    rating: 4.8,
-    reviewCount: 2103,
-    inStock: true,
-    tags: ['Vitamin', 'Miễn dịch'],
-    badge: 'Yêu thích',
-  },
-  {
-    id: 'rx-002',
-    name: 'Metformin 850mg',
-    genericName: 'Metformin HCl',
-    manufacturer: 'Stada Việt Nam',
-    type: 'rx',
-    price: 120000,
-    unit: 'hộp 3 vỉ × 10 viên',
-    imageUrl: 'https://placehold.co/320x320/fef3c7/f59e0b?text=Metformin',
-    description: 'Điều trị đái tháo đường type 2, kiểm soát đường huyết.',
-    rating: 4.6,
-    reviewCount: 567,
-    inStock: true,
-    tags: ['Tiểu đường', 'Kê đơn'],
-  },
-  {
-    id: 'otc-003',
-    name: 'Cetirizine 10mg',
-    genericName: 'Cetirizine Dihydrochloride',
-    manufacturer: 'Sanofi Việt Nam',
-    type: 'otc',
-    price: 38000,
-    unit: 'hộp 10 viên',
-    imageUrl: 'https://placehold.co/320x320/ede9fe/7c3aed?text=Cetirizine',
-    description: 'Kháng histamine, điều trị dị ứng, viêm mũi dị ứng, mề đay.',
-    rating: 4.4,
-    reviewCount: 945,
-    inStock: true,
-    tags: ['Dị ứng', 'Kháng histamine'],
-    badge: 'Mới',
-  },
-  {
-    id: 'otc-004',
-    name: 'Omega-3 Fish Oil',
-    genericName: 'EPA + DHA 1000mg',
-    manufacturer: 'Nature Made',
-    type: 'otc',
-    price: 280000,
-    unit: 'hộp 60 viên nang',
-    imageUrl: 'https://placehold.co/320x320/fff7ed/f97316?text=Omega-3',
-    description: 'Hỗ trợ tim mạch, não bộ, giảm triglyceride máu.',
-    rating: 4.9,
-    reviewCount: 3412,
-    inStock: true,
-    tags: ['Tim mạch', 'Não bộ'],
-    badge: 'Bán chạy',
-  },
-  {
-    id: 'med-001',
-    name: 'Nhiệt kế điện tử',
-    genericName: 'Digital Thermometer',
-    manufacturer: 'Omron',
-    type: 'otc',
-    price: 185000,
-    unit: 'cái',
-    imageUrl: 'https://placehold.co/320x320/f0fdf4/16a34a?text=Nhiệt+kế',
-    description: 'Đo nhiệt độ cơ thể chính xác trong 60 giây, màn hình LCD.',
-    rating: 4.7,
-    reviewCount: 728,
-    inStock: true,
-    tags: ['Vật tư y tế', 'Đo lường'],
-  },
-  {
-    id: 'med-002',
-    name: 'Máy đo huyết áp',
-    genericName: 'Blood Pressure Monitor',
-    manufacturer: 'Omron HEM-7156',
-    type: 'otc',
-    price: 1250000,
-    unit: 'máy',
-    imageUrl: 'https://placehold.co/320x320/fdf2f8/ec4899?text=Huyết+áp',
-    description: 'Máy đo huyết áp bắp tay tự động, cảnh báo rối loạn nhịp tim.',
-    rating: 4.8,
-    reviewCount: 1563,
-    inStock: true,
-    tags: ['Vật tư y tế', 'Tim mạch'],
-    badge: 'Sale',
-  },
-]
+// Map raw API data → FeaturedProduct
+function mapProduct(raw: any): FeaturedProduct {
+  const id = raw._id || raw.id || '';
+  return {
+    _id: id,
+    id,
+    name: raw.name || '',
+    description: raw.description || '',
+    price: raw.price || 0,
+    quantity: raw.quantity ?? 0,
+    inStock: (raw.quantity ?? 0) > 0,           // ← Key fix: inStock từ quantity
+    images: raw.images || [],
+    imageUrl: raw.images?.[0] || raw.imageUrl || `https://placehold.co/200x200/e0f2fe/0284c7?text=${encodeURIComponent(raw.name?.slice(0,8) || 'Thuốc')}`,
+    type: raw.type || raw.productType || 'otc', // fallback
+    manufacturer: raw.manufacturer || raw.brand || '',
+    unit: raw.unit || 'hộp',
+    badge: raw.badge || '',
+    rating: raw.rating || 4.5,
+    symptomTags: raw.symptomTags || [],
+  };
+}
 
-export const useFeaturedStore = create<FeaturedStore>(() => ({
-  products: FEATURED_PRODUCTS,
-}))
+export const useFeaturedStore = create<FeaturedStore>((set) => ({
+  products: [],
+  isLoading: false,
+  error: null,
+  fetchProducts: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const res: any = await axiosClient.get('/products');
+      // Interceptor đã unwrap response.data, nên res = { success, data: [...] }
+      const rawList = res?.data || res || [];
+      const products = Array.isArray(rawList)
+        ? rawList.map(mapProduct)
+        : [];
+      set({ products, isLoading: false });
+    } catch (error: any) {
+      set({
+        error: error?.data?.message || error?.message || 'Không thể tải danh sách sản phẩm',
+        isLoading: false,
+      });
+    }
+  },
+}));
