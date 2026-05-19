@@ -1,23 +1,13 @@
 import { create } from 'zustand';
 import axiosClient from '../api/axiosClient';
+import { type Product } from '../types';
 
 // Type khớp với những gì ProductCard cần
-export interface FeaturedProduct {
-  _id: string;
+export interface FeaturedProduct extends Product {
   id: string;           // alias của _id để tương thích
-  name: string;
-  description: string;
-  price: number;
-  quantity: number;
-  inStock: boolean;     // derived từ quantity > 0
-  images: string[];
   imageUrl: string;     // lấy images[0] hoặc placeholder
-  type: 'otc' | 'rx';
-  manufacturer?: string;
-  unit?: string;
-  badge?: string;
-  rating?: number;
-  symptomTags?: string[];
+  inStock: boolean;     // derived từ quantity > 0
+  quantity: number;
 }
 
 // Giữ lại export alias Product để tương thích với code cũ
@@ -39,16 +29,26 @@ function mapProduct(raw: any): FeaturedProduct {
     name: raw.name || '',
     description: raw.description || '',
     price: raw.price || 0,
-    quantity: raw.quantity ?? 0,
-    inStock: (raw.quantity ?? 0) > 0,           // ← Key fix: inStock từ quantity
+    quantity: raw.stock_quantity ?? raw.quantity ?? 0,
+    inStock: (raw.stock_quantity ?? raw.quantity ?? 0) > 0,
     images: raw.images || [],
     imageUrl: raw.images?.[0] || raw.imageUrl || `https://placehold.co/200x200/e0f2fe/0284c7?text=${encodeURIComponent(raw.name?.slice(0,8) || 'Thuốc')}`,
     type: raw.type || raw.productType || 'otc', // fallback
     manufacturer: raw.manufacturer || raw.brand || '',
     unit: raw.unit || 'hộp',
     badge: raw.badge || '',
-    rating: raw.rating || 4.5,
-    symptomTags: raw.symptomTags || [],
+    stock_quantity: raw.stock_quantity ?? raw.quantity ?? 0,
+    genericName: raw.genericName || '',
+    categoryId: raw.categoryId || '',
+    form: raw.form || 'tablet',
+    tags: raw.tags || [],
+    tabs: raw.tabs || {
+      ingredients: raw.genericName || '',
+      indications: raw.description || '',
+      dosage: '',
+      sideEffects: '',
+    },
+    is_prescription: raw.type === 'rx',
   };
 }
 

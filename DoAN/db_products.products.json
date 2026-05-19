@@ -1,0 +1,722 @@
+[
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cdd6"
+    },
+    "name": "Paracetamol 500mg",
+    "genericName": "Acetaminophen",
+    "manufacturer": "Dược Hậu Giang",
+    "type": "otc",
+    "form": "tablet",
+    "price": 25000,
+    "unit": "hộp 100 viên",
+    "images": [
+      "https://placehold.co/320x320/e0f2fe/0ea5e9?text=Paracetamol"
+    ],
+    "description": "Hạ sốt, giảm đau nhức đầu, đau cơ thông thường.",
+    "tags": [
+      "Hạ sốt",
+      "Giảm đau"
+    ],
+    "badge": "Bán chạy",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000001",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cdd7"
+    },
+    "name": "Cetirizine 10mg",
+    "genericName": "Cetirizine Dihydrochloride",
+    "manufacturer": "Sanofi Việt Nam",
+    "type": "otc",
+    "form": "tablet",
+    "price": 38000,
+    "unit": "hộp 10 viên",
+    "images": [
+      "https://placehold.co/320x320/ede9fe/7c3aed?text=Cetirizine"
+    ],
+    "description": "Kháng histamine, điều trị dị ứng, viêm mũi dị ứng, mề đay.",
+    "tags": [
+      "Dị ứng",
+      "Kháng histamine"
+    ],
+    "badge": "Mới",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000002",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cdd8"
+    },
+    "name": "Aspirin 81mg",
+    "genericName": "Acetylsalicylic Acid",
+    "manufacturer": "Bayer",
+    "type": "otc",
+    "form": "tablet",
+    "price": 55000,
+    "unit": "hộp 30 viên",
+    "images": [
+      "https://placehold.co/320x320/fef2f2/ef4444?text=Aspirin"
+    ],
+    "description": "Liều thấp phòng ngừa huyết khối, nhồi máu cơ tim.",
+    "tags": [
+      "Tim mạch",
+      "Giảm đau"
+    ],
+    "badge": "Hot",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000003",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cdd9"
+    },
+    "name": "Ibuprofen 400mg",
+    "genericName": "Ibuprofen",
+    "manufacturer": "Imexpharm",
+    "type": "otc",
+    "form": "tablet",
+    "price": 32000,
+    "unit": "hộp 20 viên",
+    "images": [
+      "https://placehold.co/320x320/f0f9ff/0284c7?text=Ibuprofen"
+    ],
+    "description": "Kháng viêm, giảm đau, hạ sốt nhanh chóng.",
+    "tags": [
+      "Kháng viêm",
+      "Giảm đau"
+    ],
+    "badge": "Hot",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000004",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cdda"
+    },
+    "name": "Vitamin C 1000mg",
+    "genericName": "Ascorbic Acid",
+    "manufacturer": "Traphaco",
+    "type": "vitamin",
+    "form": "effervescent",
+    "price": 45000,
+    "unit": "hộp 30 viên sủi",
+    "images": [
+      "https://placehold.co/320x320/d1fae5/10b981?text=Vitamin+C"
+    ],
+    "description": "Bổ sung vitamin C, tăng cường miễn dịch, chống oxy hóa.",
+    "tags": [
+      "Vitamin",
+      "Miễn dịch"
+    ],
+    "badge": "Yêu thích",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000005",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818c"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cddb"
+    },
+    "name": "Omega-3 Fish Oil",
+    "genericName": "EPA + DHA 1000mg",
+    "manufacturer": "Nature Made",
+    "type": "vitamin",
+    "form": "capsule",
+    "price": 280000,
+    "unit": "hộp 60 viên nang",
+    "images": [
+      "https://placehold.co/320x320/fff7ed/f97316?text=Omega-3"
+    ],
+    "description": "Hỗ trợ tim mạch, não bộ, giảm triglyceride máu.",
+    "tags": [
+      "Tim mạch",
+      "Não bộ"
+    ],
+    "badge": "Bán chạy",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000006",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cddc"
+    },
+    "name": "Vitamin D3 2000IU",
+    "genericName": "Cholecalciferol",
+    "manufacturer": "Blackmores",
+    "type": "vitamin",
+    "form": "capsule",
+    "price": 195000,
+    "unit": "hộp 60 viên",
+    "images": [
+      "https://placehold.co/320x320/fefce8/ca8a04?text=Vit+D3"
+    ],
+    "description": "Bổ sung vitamin D3, hỗ trợ hấp thu canxi, tăng cường xương khớp.",
+    "tags": [
+      "Vitamin",
+      "Xương khớp"
+    ],
+    "badge": "Hot",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000007",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818c"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cddd"
+    },
+    "name": "Siro ho trẻ em Prospan",
+    "genericName": "Ivy Leaf Extract",
+    "manufacturer": "Engelhard Arzneimittel",
+    "type": "otc",
+    "form": "liquid",
+    "price": 95000,
+    "unit": "chai 100ml",
+    "images": [
+      "https://placehold.co/320x320/ecfdf5/065f46?text=Prospan"
+    ],
+    "description": "Giảm ho, long đờm cho trẻ em từ 1 tuổi trở lên.",
+    "tags": [
+      "Hô hấp",
+      "Trẻ em"
+    ],
+    "badge": "Bán chạy",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000008",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cdde"
+    },
+    "name": "Dung dịch vệ sinh mũi NaCl 0.9%",
+    "genericName": "Sodium Chloride 0.9%",
+    "manufacturer": "DHG Pharma",
+    "type": "personal_care",
+    "form": "liquid",
+    "price": 28000,
+    "unit": "chai 250ml",
+    "images": [
+      "https://placehold.co/320x320/f0f9ff/0284c7?text=NaCl"
+    ],
+    "description": "Rửa mũi, vệ sinh tai mũi họng, an toàn cho mọi lứa tuổi.",
+    "tags": [
+      "Tai mũi họng",
+      "Vệ sinh"
+    ],
+    "badge": "Hot",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000009",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5c001"
+    },
+    "name": "Dung dịch vệ sinh mũi NaCl",
+    "genericName": "Sodium Chloride 0.9%",
+    "manufacturer": "DHG Pharma",
+    "type": "personal_care",
+    "form": "liquid",
+    "price": 28000,
+    "unit": "chai 250ml",
+    "images": [
+      "https://placehold.co/320x320/f0f9ff/0284c7?text=NaCl"
+    ],
+    "description": "Rửa mũi, vệ sinh tai mũi họng, an toàn cho mọi lứa tuổi.",
+    "tags": [
+      "Tai mũi họng",
+      "Vệ sinh"
+    ],
+    "badge": "Hot",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000009",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818b"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cddf"
+    },
+    "name": "Amoxicillin 500mg",
+    "genericName": "Amoxicillin Trihydrate",
+    "manufacturer": "Pymepharco",
+    "type": "rx",
+    "form": "tablet",
+    "price": 85000,
+    "unit": "hộp 2 vỉ × 10 viên",
+    "images": [
+      "https://placehold.co/320x320/fef3c7/f59e0b?text=Amoxicillin"
+    ],
+    "description": "Kháng sinh nhóm Penicillin điều trị nhiễm khuẩn đường hô hấp, tiết niệu.",
+    "tags": [
+      "Kháng sinh",
+      "Kê đơn"
+    ],
+    "badge": "Rx",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": true,
+    "productCode": "MED-000010",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818a"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cde0"
+    },
+    "name": "Metformin 850mg",
+    "genericName": "Metformin HCl",
+    "manufacturer": "Stada Việt Nam",
+    "type": "rx",
+    "form": "tablet",
+    "price": 120000,
+    "unit": "hộp 3 vỉ × 10 viên",
+    "images": [
+      "https://placehold.co/320x320/fef3c7/f59e0b?text=Metformin"
+    ],
+    "description": "Điều trị đái tháo đường type 2, kiểm soát đường huyết.",
+    "tags": [
+      "Tiểu đường",
+      "Kê đơn"
+    ],
+    "badge": "Rx",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": true,
+    "productCode": "MED-000011",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818a"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cde1"
+    },
+    "name": "Amlodipine 5mg",
+    "genericName": "Amlodipine Besylate",
+    "manufacturer": "Pfizer",
+    "type": "rx",
+    "form": "tablet",
+    "price": 145000,
+    "unit": "hộp 3 vỉ × 10 viên",
+    "images": [
+      "https://placehold.co/320x320/fdf4ff/a855f7?text=Amlodipine"
+    ],
+    "description": "Thuốc hạ áp nhóm chẹn kênh calci, điều trị tăng huyết áp và đau thắt ngực.",
+    "tags": [
+      "Tim mạch",
+      "Hạ áp"
+    ],
+    "badge": "Rx",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": true,
+    "productCode": "MED-000012",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818a"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cde2"
+    },
+    "name": "Atorvastatin 20mg",
+    "genericName": "Atorvastatin Calcium",
+    "manufacturer": "Teva Pharmaceuticals",
+    "type": "rx",
+    "form": "tablet",
+    "price": 235000,
+    "unit": "hộp 3 vỉ × 10 viên",
+    "images": [
+      "https://placehold.co/320x320/fef9c3/a16207?text=Atorva"
+    ],
+    "description": "Statin hạ cholesterol, phòng ngừa bệnh tim mạch xơ vữa.",
+    "tags": [
+      "Cholesterol",
+      "Tim mạch"
+    ],
+    "badge": "Rx",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": true,
+    "productCode": "MED-000013",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818a"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cde3"
+    },
+    "name": "Augmentin 457mg/5ml",
+    "genericName": "Amoxicillin + Clavulanic Acid",
+    "manufacturer": "GlaxoSmithKline",
+    "type": "rx",
+    "form": "liquid",
+    "price": 185000,
+    "unit": "chai 70ml",
+    "images": [
+      "https://placehold.co/320x320/fef3c7/d97706?text=Augmentin"
+    ],
+    "description": "Kháng sinh phổ rộng dạng hỗn dịch cho trẻ em, điều trị nhiễm khuẩn kháng Penicillin.",
+    "tags": [
+      "Kháng sinh",
+      "Trẻ em"
+    ],
+    "badge": "Rx",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": true,
+    "productCode": "MED-000014",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818a"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cde4"
+    },
+    "name": "Nhiệt kế điện tử",
+    "genericName": "Digital Thermometer",
+    "manufacturer": "Omron",
+    "type": "medical_device",
+    "form": "device",
+    "price": 185000,
+    "unit": "cái",
+    "images": [
+      "https://placehold.co/320x320/f0fdf4/16a34a?text=Nhiệt+kế"
+    ],
+    "description": "Đo nhiệt độ cơ thể chính xác trong 60 giây, màn hình LCD.",
+    "tags": [
+      "Vật tư y tế",
+      "Đo lường"
+    ],
+    "badge": "Hot",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000015",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818d"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cde5"
+    },
+    "name": "Máy đo huyết áp bắp tay",
+    "genericName": "Blood Pressure Monitor",
+    "manufacturer": "Omron HEM-7156",
+    "type": "medical_device",
+    "form": "device",
+    "price": 1250000,
+    "unit": "máy",
+    "images": [
+      "https://placehold.co/320x320/fdf2f8/ec4899?text=Huyết+áp"
+    ],
+    "description": "Máy đo huyết áp bắp tay tự động, cảnh báo rối loạn nhịp tim (AFib).",
+    "tags": [
+      "Vật tư y tế",
+      "Tim mạch"
+    ],
+    "badge": "Sale",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000016",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818d"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6a0aaf0582046ba4abf5cde6"
+    },
+    "name": "Máy đo đường huyết Accu-Chek",
+    "genericName": "Glucometer",
+    "manufacturer": "Roche",
+    "type": "medical_device",
+    "form": "device",
+    "price": 650000,
+    "unit": "máy + 10 que thử",
+    "images": [
+      "https://placehold.co/320x320/f0f9ff/0369a1?text=Accu-Chek"
+    ],
+    "description": "Đo đường huyết mao mạch nhanh chóng, kết quả trong 4 giây.",
+    "tags": [
+      "Tiểu đường",
+      "Đo lường"
+    ],
+    "badge": "Bán chạy",
+    "tabs": {
+      "ingredients": "Thông tin thành phần đang được cập nhật.",
+      "indications": "Thông tin chỉ định đang được cập nhật.",
+      "dosage": "Vui lòng tham khảo hướng dẫn sử dụng đi kèm sản phẩm hoặc hỏi dược sĩ.",
+      "sideEffects": "Thông tin tác dụng phụ đang được cập nhật."
+    },
+    "inventory": {
+      "Kho Tổng": 100,
+      "CH Quận 1": 50,
+      "CH Quận 5": 50,
+      "stock_quantity": 200
+    },
+    "stock_quantity": 200,
+    "is_prescription": false,
+    "productCode": "MED-000017",
+    "categoryId": {
+      "$oid": "6a0c392609785fd74d22818d"
+    },
+    "__v": 0
+  }
+]

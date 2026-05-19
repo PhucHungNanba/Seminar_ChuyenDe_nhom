@@ -16,3 +16,20 @@ exports.verifyToken = (req, res, next) => {
     res.status(403).json({ success: false, message: 'Invalid or expired token', code: 403 });
   }
 };
+
+exports.isAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'Admin') {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: 'Access denied: Admin role required', code: 403 });
+  }
+};
+
+exports.verifyAdminOrPharmacist = (req, res, next) => {
+  if (req.user && (req.user.role === 'Admin' || req.user.role === 'Pharmacist')) {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: 'Access denied: Admin or Pharmacist role required', code: 403 });
+  }
+};
+

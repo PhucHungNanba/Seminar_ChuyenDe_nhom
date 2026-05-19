@@ -1,16 +1,82 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, CheckCircle2, FileText, X, AlertTriangle } from 'lucide-react'
+import { Upload, CheckCircle2, FileText, X } from 'lucide-react'
 import { useCartStore, CartItem } from '../../store/cartStore'
 import PrescriptionModal from './PrescriptionModal'
 
-interface Props {
-  item: CartItem
-}
+type RequestPayload = { fileUrl: string; fileName: string; uploadedAt: string; file?: File }
 
-export default function PrescriptionUploader({ item }: Props) {
+type Props =
+  | {
+      item: CartItem
+      mode?: 'cart'
+    }
+  | {
+      mode: 'request'
+      productName: string
+      onSubmit: (payload: RequestPayload) => void | Promise<boolean | void> | boolean
+      buttonLabel?: string
+      disabled?: boolean
+    }
+
+export default function PrescriptionUploader(props: Props) {
   const setPrescription = useCartStore((s) => s.setPrescription)
   const [modalOpen, setModalOpen] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  if (props.mode === 'request') {
+    return (
+      <div className="w-full">
+        <PrescriptionModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          mode="request"
+          productName={props.productName}
+          onConfirm={async (payload) => {
+            const accepted = await props.onSubmit(payload)
+            if (accepted === false) return false
+            setSubmitted(true)
+            return true
+          }}
+        />
+
+        <AnimatePresence mode="wait">
+          {!submitted ? (
+            <motion.button
+              key="request-btn"
+              id="btn-rx-request"
+              onClick={() => setModalOpen(true)}
+              disabled={props.disabled}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full flex items-center justify-center gap-2 py-4 px-6
+                         rounded-full font-bold text-[15px] transition-all
+                         ${props.disabled
+                           ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                           : 'bg-black text-white hover:bg-slate-800'
+                         }`}
+            >
+              <Upload className="w-4 h-4" />
+              {props.buttonLabel || 'Gửi yêu cầu kê đơn'}
+            </motion.button>
+          ) : (
+            <motion.div
+              key="request-submitted"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50
+                         text-emerald-700 font-semibold"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Yêu cầu đã gửi. Dược sĩ sẽ báo giá sớm.
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    )
+  }
+
+  const { item } = props
 
   function removePrescription() {
     setPrescription(item.id, null)

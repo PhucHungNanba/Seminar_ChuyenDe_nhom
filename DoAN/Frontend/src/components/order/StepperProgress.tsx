@@ -1,7 +1,7 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
-  ClipboardList, Package, Truck, CheckCircle2, Circle
+  ClipboardList, Package, Truck, CheckCircle2
 } from 'lucide-react'
 
 // ── Step definitions ────────────────────────────────
@@ -26,14 +26,6 @@ interface Props {
 export default function StepperProgress({ currentStep }: Props) {
   const current = STEP_INDEX[currentStep]
   const lineRef = useRef<HTMLDivElement>(null)
-  const [lineWidth, setLineWidth] = useState(0)
-
-  // Calculate the pixel width of the total connector track
-  useEffect(() => {
-    if (lineRef.current) {
-      setLineWidth(lineRef.current.offsetWidth)
-    }
-  }, [])
 
   // Progress: 0 at step 0, 100% at step 3
   const progressPct = current / (ORDER_STEPS.length - 1)

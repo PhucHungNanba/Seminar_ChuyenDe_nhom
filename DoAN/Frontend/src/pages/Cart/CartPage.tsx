@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import {
   ShoppingCart, ArrowLeft, ShieldCheck,
-  AlertTriangle, ChevronRight, Lock, CheckCircle2
+  ChevronRight
 } from 'lucide-react'
 import { useCartStore } from '../../store/cartStore'
 import CartItemCard from '../../components/cart/CartItem'
@@ -17,11 +17,6 @@ function formatVnd(n: number) {
 
 export default function CartPage() {
   const items = useCartStore((s) => s.items)
-
-  const rxMissingPrescription = items.filter(
-    (i) => i.type === 'rx' && !i.prescription
-  )
-  const canCheckout = rxMissingPrescription.length === 0
 
   const userPoints = useCartStore((s) => s.userPoints)
   const usePoints = useCartStore((s) => s.usePoints)
@@ -37,15 +32,16 @@ export default function CartPage() {
 
   useEffect(() => {
     const fetchRules = async () => {
-      if (items.length === 0) return
+      if (items.length === 0) { setRules([]); return }
       setRulesLoading(true)
       try {
-        const productIds = items.map(i => i.id).join(',')
-        const res: any = await axiosClient.get(`/association-rules/recommendations?productIds=${productIds}`)
-        // Interceptor đã unwrap response.data, res = body JSON trực tiếp
-        setRules(res?.data || res || [])
+        // Query recommendations based on the first item in cart (antecedent)
+        const firstProductId = items[0].id
+        const res: any = await axiosClient.get(`/association-rules/recommend?productId=${firstProductId}`)
+        const data = res?.data || res || []
+        setRules(Array.isArray(data) ? data : [])
       } catch {
-        // AI service có thể chưa khởi động - bỏ qua lỗi, không hiện UI error
+        // AI service may not be running - silently ignore
         setRules([])
       } finally {
         setRulesLoading(false)
@@ -87,30 +83,6 @@ export default function CartPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 flex flex-col gap-3">
-          <AnimatePresence>
-            {rxMissingPrescription.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200
-                                rounded-2xl text-amber-800">
-                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-sm">
-                      {rxMissingPrescription.length} thuốc Rx cần đơn thuốc
-                    </p>
-                    <p className="text-xs text-amber-600 mt-0.5">
-                      Vui lòng tải đơn thuốc hợp lệ lên cho từng sản phẩm kê đơn để tiến hành thanh toán.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <AnimatePresence mode="popLayout">
             {items.map((item) => (
               <CartItemCard key={item.id} item={item} />
@@ -167,94 +139,41 @@ export default function CartPage() {
               </div>
             </div>
 
-            {items.some((i) => i.type === 'rx') && (
-              <div className="mt-6 p-4 rounded-2xl bg-white/60">
-                <p className="text-[13px] font-bold text-slate-700 mb-3 uppercase tracking-wider">Trạng thái đơn thuốc:</p>
-                <div className="flex flex-col gap-2">
-                  {items.filter((i) => i.type === 'rx').map((rxItem) => (
-                    <div key={rxItem.id} className="flex items-center gap-2 text-[13px]">
-                      {rxItem.prescription
-                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        : <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-                      }
-                      <span className={`truncate max-w-[160px] font-medium ${rxItem.prescription ? 'text-slate-700' : 'text-rose-600'}`}>
-                        {rxItem.name}
-                      </span>
-                      <span className={`ml-auto font-bold shrink-0 ${rxItem.prescription ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {rxItem.prescription ? 'Đã tải' : 'Thiếu'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="mt-5">
               <AnimatePresence mode="wait">
-                {canCheckout ? (
+                <motion.div
+                  key="checkout-enabled"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ type: 'spring', damping: 18, stiffness: 280 }}
+                  className="relative"
+                >
                   <motion.div
-                    key="checkout-enabled"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ type: 'spring', damping: 18, stiffness: 280 }}
-                    className="relative"
+                    className="absolute inset-0 rounded-xl bg-sky-400 opacity-0"
+                    animate={{
+                      opacity: [0, 0.35, 0],
+                      scale: [1, 1.06, 1],
+                    }}
+                    transition={{
+                      duration: 1.8,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                  <Link
+                    id="btn-checkout"
+                    to="/checkout"
+                    className="relative flex items-center justify-center gap-2 w-full py-4 px-6
+                               rounded-full bg-black text-white text-[15px]
+                               font-bold hover:scale-[1.02] hover:bg-slate-800
+                               shadow-xl shadow-black/10 transition-all active:scale-95"
                   >
-                    <motion.div
-                      className="absolute inset-0 rounded-xl bg-sky-400 opacity-0"
-                      animate={{
-                        opacity: [0, 0.35, 0],
-                        scale: [1, 1.06, 1],
-                      }}
-                      transition={{
-                        duration: 1.8,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                    />
-                    <Link
-                      id="btn-checkout"
-                      to="/checkout"
-                      className="relative flex items-center justify-center gap-2 w-full py-4 px-6
-                                 rounded-full bg-black text-white text-[15px]
-                                 font-bold hover:scale-[1.02] hover:bg-slate-800
-                                 shadow-xl shadow-black/10 transition-all active:scale-95"
-                    >
-                      <ShieldCheck className="w-4 h-4" />
-                      Tiến hành thanh toán
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
-                    <motion.p
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-center text-xs text-emerald-600 mt-2 font-medium"
-                    >
-                      ✓ Tất cả đơn thuốc đã sẵn sàng
-                    </motion.p>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="checkout-disabled"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="relative"
-                  >
-                    <button
-                      id="btn-checkout-disabled"
-                      disabled
-                      className="flex items-center justify-center gap-2 w-full py-4 px-6
-                                 rounded-full bg-slate-200 text-slate-400 font-bold
-                                 cursor-not-allowed"
-                    >
-                      <Lock className="w-4 h-4" />
-                      Thanh toán
-                    </button>
-                    <p className="text-center text-xs text-amber-600 mt-2">
-                      Cần tải đơn thuốc cho {rxMissingPrescription.length} sản phẩm Rx
-                    </p>
-                  </motion.div>
-                )}
+                    <ShieldCheck className="w-4 h-4" />
+                    Tiến hành thanh toán
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </motion.div>
               </AnimatePresence>
             </div>
 

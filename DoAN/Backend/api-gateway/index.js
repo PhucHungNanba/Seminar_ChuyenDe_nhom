@@ -40,8 +40,8 @@ const createServiceProxy = (target, extra = {}) => {
     target,
     changeOrigin: true,
     logLevel: 'debug',
-    proxyTimeout: 5000,
-    timeout: 10000,
+    proxyTimeout: 15000,  // ⚡ Tăng từ 5000 lên 15000ms (15s)
+    timeout: 20000,        // ⚡ Tăng từ 10000 lên 20000ms (20s)
     onError: (err, req, res) => onError(err, req, res, target),
     ...extra,
   });
@@ -49,9 +49,15 @@ const createServiceProxy = (target, extra = {}) => {
 
 // Định tuyến (Routing) tới các Microservices
 // Trong Docker network, phải dùng tên container thay vì localhost
-app.use('/api/users', createServiceProxy(process.env.USER_SERVICE_URL || 'http://user-service:3001'));
-app.use('/api/products', createServiceProxy(process.env.PRODUCT_SERVICE_URL || 'http://product-service:3002'));
-app.use('/api/orders', createServiceProxy(process.env.ORDER_SERVICE_URL || 'http://order-service:3003'));
+app.use('/api/users', createServiceProxy(process.env.USER_SERVICE_URL || 'http://user-service:3001', {
+  pathRewrite: { '^/api/users': '' }
+}));
+app.use('/api/products', createServiceProxy(process.env.PRODUCT_SERVICE_URL || 'http://product-service:3002', {
+  pathRewrite: { '^/api/products': '' }
+}));
+app.use('/api/orders', createServiceProxy(process.env.ORDER_SERVICE_URL || 'http://order-service:3003', {
+  pathRewrite: { '^/api/orders': '' }
+}));
 // Association rules và AI đều trỏ về ai-service
 // Forward association-rules -> ai-service /api/ai
 app.use('/api/association-rules', createServiceProxy(process.env.AI_SERVICE_URL || 'http://ai-service:8000', {

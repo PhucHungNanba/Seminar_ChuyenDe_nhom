@@ -7,22 +7,29 @@ import {
 import { useCartStore, CartItem } from '../../store/cartStore'
 
 interface Props {
-  item: CartItem
+  item?: CartItem
+  productName?: string
+  mode?: 'cart' | 'request'
+  onConfirm?: (payload: { fileUrl: string; fileName: string; uploadedAt: string; file?: File }) => void | Promise<boolean | void> | boolean
   open: boolean
   onClose: () => void
 }
 
 // ── Slide-up modal via React Portal ─────────────────
-export default function PrescriptionModal({ item, open, onClose }: Props) {
+export default function PrescriptionModal({ item, productName, mode = 'cart', onConfirm, open, onClose }: Props) {
   const setPrescription = useCartStore((s) => s.setPrescription)
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<{ url: string; name: string } | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const displayName = item?.name || productName || 'đơn thuốc'
 
   function processFile(file: File) {
     const localUrl = URL.createObjectURL(file)
     setPreview({ url: localUrl, name: file.name })
+    setSelectedFile(file)
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -41,14 +48,25 @@ export default function PrescriptionModal({ item, open, onClose }: Props) {
     if (!preview) return
     setUploading(true)
     // Simulate 1s upload then commit to store
-    setTimeout(() => {
-      setPrescription(item.id, {
+    setTimeout(async () => {
+      const payload = {
         fileUrl: preview.url,
         fileName: preview.name,
         uploadedAt: new Date().toISOString(),
-      })
+        file: selectedFile || undefined,
+      }
+      if (mode === 'request') {
+        const accepted = await onConfirm?.(payload)
+        if (accepted === false) {
+          setUploading(false)
+          return
+        }
+      } else if (item) {
+        setPrescription(item.id, payload)
+      }
       setUploading(false)
       setPreview(null)
+      setSelectedFile(null)
       onClose()
     }, 1000)
   }
@@ -56,6 +74,7 @@ export default function PrescriptionModal({ item, open, onClose }: Props) {
   function handleClose() {
     if (uploading) return
     setPreview(null)
+    setSelectedFile(null)
     onClose()
   }
 
@@ -102,7 +121,7 @@ export default function PrescriptionModal({ item, open, onClose }: Props) {
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                    Dành cho: <span className="font-semibold text-amber-700">{item.name}</span>
+                    Dành cho: <span className="font-semibold text-amber-700">{displayName}</span>
                   </p>
                 </div>
                 <button
@@ -136,7 +155,7 @@ export default function PrescriptionModal({ item, open, onClose }: Props) {
                   >
                     <input
                       ref={fileRef}
-                      id={`modal-upload-${item.id}`}
+                      id={`modal-upload-${item?.id || 'rx-request'}`}
                       type="file"
                       accept="image/*,.pdf"
                       className="hidden"
@@ -221,7 +240,7 @@ export default function PrescriptionModal({ item, open, onClose }: Props) {
 
               {/* ── Notice ── */}
               <p className="text-xs text-slate-400 text-center mt-4">
-                Đơn thuốc sẽ được liên kết riêng với sản phẩm <strong>{item.name}</strong>.
+                Đơn thuốc sẽ được liên kết riêng với sản phẩm <strong>{displayName}</strong>.
                 Chúng tôi bảo mật thông tin y tế của bạn.
               </p>
 
@@ -236,7 +255,7 @@ export default function PrescriptionModal({ item, open, onClose }: Props) {
                 </button>
 
                 <motion.button
-                  id={`confirm-upload-${item.id}`}
+                  id={`confirm-upload-${item?.id || 'rx-request'}`}
                   onClick={handleConfirm}
                   disabled={!preview || uploading}
                   whileTap={preview && !uploading ? { scale: 0.97 } : {}}

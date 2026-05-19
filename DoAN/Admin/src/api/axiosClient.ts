@@ -27,6 +27,11 @@ axiosClient.interceptors.response.use(
     return response.data; 
   },
   (error: any) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      window.dispatchEvent(new Event('admin-unauthorized'));
+    }
     return Promise.reject(error);
   }
 );

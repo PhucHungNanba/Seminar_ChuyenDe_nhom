@@ -12,9 +12,12 @@ export interface InventoryItem {
 export interface RxRequest {
   _id: string;
   prescriptionCode?: string;
+  requestCode?: string;
   customerPhone: string;
   imageUrl: string;
+  thumbnailUrl?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   submittedAt: string;
+  createdAt?: string;
   totalAmount?: number;
 }

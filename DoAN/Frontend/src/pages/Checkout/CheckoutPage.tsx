@@ -151,7 +151,7 @@ export default function CheckoutPage() {
       const clearCart = useCartStore.getState().clearCart
       const orderPayload = {
         items: items.map(i => ({
-          productId: i._id || i.id,
+          productId: i.id,
           quantity: i.quantity,
           price: i.price,
           name: i.name,
@@ -167,7 +167,7 @@ export default function CheckoutPage() {
       const res: any = await axiosClient.post('/orders', orderPayload)
       // Interceptor đã unwrap: res = { success, message, data: order }
       const createdOrder = res?.data || res
-      setOrderId(createdOrder?._id || createdOrder?.id || '')
+      setOrderId(createdOrder?.orderCode || createdOrder?._id || createdOrder?.id || '')
 
       // Xóa giỏ hàng sau khi đặt hàng thành công
       clearCart()
@@ -223,20 +223,29 @@ export default function CheckoutPage() {
         <div className="bg-slate-50 rounded-2xl p-4 w-full text-sm text-left border border-slate-100">
           <p className="text-slate-400 mb-1">Mã đơn hàng</p>
           <p className="font-bold text-sky-600 text-lg font-mono">
-            #{orderId ? orderId.slice(-8).toUpperCase() : 'ĐANG XỬ LÝ'}
+            {orderId ? orderId : 'ĐANG XỬ LÝ'}
           </p>
           <p className="text-xs text-slate-400 mt-0.5">ID: {orderId || 'N/A'}</p>
           <p className="text-slate-400 mt-3 mb-1">Giao đến</p>
           <p className="font-medium text-slate-700">{form.fullName} · {form.phone}</p>
           <p className="text-slate-500">{form.address}, {form.district}, {form.city}</p>
         </div>
-        <Link
-          to="/"
-          className="px-6 py-3 rounded-full bg-sky-500 text-white font-semibold text-sm
-                     hover:bg-sky-600 transition-colors shadow-md hover:shadow-sky-200"
-        >
-          Về trang chủ
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-2">
+          <Link
+            to={`/orders/${orderId}`}
+            className="px-6 py-3 rounded-full bg-sky-500 text-white font-semibold text-sm
+                       hover:bg-sky-600 transition-colors shadow-md hover:shadow-sky-200"
+          >
+            Theo dõi đơn hàng
+          </Link>
+          <Link
+            to="/"
+            className="px-6 py-3 rounded-full border border-slate-200 text-slate-600 font-semibold text-sm
+                       hover:bg-slate-50 transition-colors"
+          >
+            Về trang chủ
+          </Link>
+        </div>
       </motion.div>
     )
   }

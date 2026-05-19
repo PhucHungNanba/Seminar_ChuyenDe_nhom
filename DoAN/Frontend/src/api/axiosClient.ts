@@ -6,7 +6,7 @@ const axiosClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 8000, // 8s timeout - tránh UI bị treo khi service down
+  timeout: 25000, // ⚡ Tăng từ 8000 lên 25000ms (25s) để cover API Gateway timeout
 });
 
 axiosClient.interceptors.request.use(

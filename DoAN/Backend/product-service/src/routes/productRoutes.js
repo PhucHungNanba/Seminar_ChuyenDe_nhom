@@ -5,6 +5,11 @@ const productController = require('../controllers/productController');
 // Đặt route cụ thể (/search) lên trước các route có param động (/:id)
 router.get('/search', productController.searchBySymptoms);
 
+// Inventory Routes
+router.get('/inventory', productController.getInventory);
+router.put('/inventory/:id', productController.updateInventory);
+router.post('/deduct-stock', productController.deductStock);
+
 // CRUD routes
 router.post('/', productController.createProduct);
 router.get('/', productController.getAllProducts);

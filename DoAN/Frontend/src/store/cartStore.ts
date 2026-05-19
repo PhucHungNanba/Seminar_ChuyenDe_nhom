@@ -5,11 +5,12 @@ import { persist } from 'zustand/middleware'
 export interface CartItem {
   id: string
   name: string
-  type: 'otc' | 'rx'       // OTC = over-the-counter | rx = prescription required
+  type: 'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device'
   price: number
   quantity: number
   imageUrl?: string
-  prescription: {           // only for rx items
+  quotedByPharmacist?: boolean  // true = pushed by pharmacist after Rx approval
+  prescription: {
     fileUrl: string
     fileName: string
     uploadedAt: string
@@ -18,7 +19,9 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'prescription'>) => void
+  addItem: (item: Omit<CartItem, 'prescription' | 'quotedByPharmacist'>) => void
+  /** Called when pharmacist approves Rx and backend creates the quoted order */
+  addQuotedRxItems: (items: Array<Omit<CartItem, 'prescription' | 'type' | 'quotedByPharmacist'>>) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, qty: number) => void
   setPrescription: (itemId: string, prescription: CartItem['prescription']) => void
@@ -27,6 +30,7 @@ interface CartStore {
   toggleUsePoints: () => void
   latestAddedItemId: string | null
   clearLatestAddedItem: () => void
+  clearCart: () => void
   totalCount: () => number
 }
 
@@ -40,6 +44,7 @@ export const useCartStore = create<CartStore>()(
 
       toggleUsePoints: () => set((s) => ({ usePoints: !s.usePoints })),
       clearLatestAddedItem: () => set({ latestAddedItemId: null }),
+      clearCart: () => set({ items: [], latestAddedItemId: null }),
 
       addItem: (item) =>
         set((s) => {
@@ -52,7 +57,34 @@ export const useCartStore = create<CartStore>()(
               latestAddedItemId: item.id
             }
           }
-          return { items: [...s.items, { ...item, prescription: null }], latestAddedItemId: item.id }
+          return {
+            items: [...s.items, { ...item, prescription: null, quotedByPharmacist: false }],
+            latestAddedItemId: item.id
+          }
+        }),
+
+      /**
+       * Pharmacist push: inject Rx items that have been approved.
+       * Sets quotedByPharmacist = true so CartItem locks the quantity.
+       */
+      addQuotedRxItems: (incoming) =>
+        set((s) => {
+          const nextItems = [...s.items]
+          incoming.forEach((rx) => {
+            const index = nextItems.findIndex((i) => i.id === rx.id)
+            const normalized: CartItem = {
+              ...rx,
+              type: 'rx' as const,
+              prescription: null,
+              quotedByPharmacist: true,
+            }
+            if (index >= 0) {
+              nextItems[index] = { ...nextItems[index], ...normalized }
+            } else {
+              nextItems.push(normalized)
+            }
+          })
+          return { items: nextItems }
         }),
 
       removeItem: (id) =>
@@ -63,7 +95,6 @@ export const useCartStore = create<CartStore>()(
           items: s.items.map((i) => (i.id === id ? { ...i, quantity: qty } : i)),
         })),
 
-      // Map prescription 1-1 to specific cart item
       setPrescription: (itemId, prescription) =>
         set((s) => ({
           items: s.items.map((i) =>
@@ -74,7 +105,7 @@ export const useCartStore = create<CartStore>()(
       totalCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
     }),
     {
-      name: 'pharmacare-cart',   // localStorage key
+      name: 'pharmacare-cart',
       partialize: (state) => ({ items: state.items, usePoints: state.usePoints }),
     }
   )

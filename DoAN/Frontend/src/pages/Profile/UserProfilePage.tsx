@@ -24,7 +24,8 @@ const NAV_ITEMS: { key: NavKey; icon: typeof FileText; label: string; sub?: stri
   { key: 'security',      icon: Shield,      label: 'Bảo mật & Quyền riêng tư' },
 ]
 
-function getPrxStatus(expiryDate: string) {
+function getPrxStatus(expiryDate?: string) {
+  if (!expiryDate) return 'valid'
   return new Date(expiryDate).getTime() > Date.now() ? 'valid' : 'expired'
 }
 
@@ -40,7 +41,7 @@ function StatusBadge({ status }: { status: 'valid' | 'expired' }) {
   )
 }
 
-function fmt(iso: string) {
+function fmt(iso?: string) {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
@@ -76,7 +77,7 @@ function PrescriptionModal({
         <div className="flex items-start justify-between p-6 border-b border-slate-100">
           <div>
             <p className="text-xs text-slate-400 font-mono mb-1">{formatDisplayId(prx._id, 'RX')}</p>
-            <h3 className="font-bold text-slate-800 text-lg">{prx.diagnosis}</h3>
+            <h3 className="font-bold text-slate-800 text-lg">{prx.diagnosis || '---'}</h3>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors">
             <X className="w-5 h-5" />
@@ -88,9 +89,18 @@ function PrescriptionModal({
             <img src={prx.thumbnailUrl} alt="Đơn thuốc" className="w-28 h-40 object-cover rounded-xl border border-slate-100 shrink-0" />
             <div className="flex flex-col gap-2 text-sm">
               <StatusBadge status={status} />
-              <div className="flex items-center gap-2 text-slate-600"><Stethoscope className="w-4 h-4 text-sky-400 shrink-0" />{prx.doctorName} — {prx.doctorSpecialty}</div>
-              <div className="flex items-center gap-2 text-slate-600"><Hospital className="w-4 h-4 text-sky-400 shrink-0" />{prx.hospital}</div>
-              <div className="flex items-center gap-2 text-slate-600"><Calendar className="w-4 h-4 text-sky-400 shrink-0" />Cấp: {fmt(prx.issuedDate)} — Hết hạn: {fmt(prx.expiryDate)}</div>
+              <div className="flex items-center gap-2 text-slate-600">
+                <Stethoscope className="w-4 h-4 text-sky-400 shrink-0" />
+                🩺 Bác sĩ: {prx.doctorName || '---'}
+              </div>
+              <div className="flex items-center gap-2 text-slate-600">
+                <Hospital className="w-4 h-4 text-sky-400 shrink-0" />
+                🏥 Bệnh viện: {prx.hospital || '---'}
+              </div>
+              <div className="flex items-center gap-2 text-slate-600">
+                <Calendar className="w-4 h-4 text-sky-400 shrink-0" />
+                📅 Cấp: {fmt(prx.issueDate || prx.issuedDate) || '---'} — Hết hạn: {fmt(prx.expiryDate) || '---'}
+              </div>
               {prx.notes && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 border border-amber-200 mt-1 italic">📝 {prx.notes}</p>}
             </div>
           </div>
@@ -99,13 +109,16 @@ function PrescriptionModal({
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Danh sách thuốc ({prx.medicines?.length || 0})</p>
             <div className="flex flex-col gap-2">
               {(prx.medicines || []).map((m) => (
-                <div key={m.productId} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                  <img src={m.imageUrl} alt={m.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{m.name}</p>
-                    <p className="text-xs text-slate-500">{m.dosage} · SL: {m.quantity}</p>
+                <div key={m.productId} className="flex items-center justify-between p-3.5 bg-amber-50/60 rounded-xl border border-amber-100/80 hover:bg-amber-50 transition-colors">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-sm font-bold text-slate-800">{m.name}</p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {m.dosage ? `${m.dosage} · ` : ''}SL: {m.quantity}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-sky-700 shrink-0">{((m.price || 0) * (m.quantity || 1)).toLocaleString('vi-VN')}đ</p>
+                  <p className="text-sm font-extrabold text-sky-700">
+                    {((m.price || 0) * (m.quantity || 1)).toLocaleString('vi-VN')}đ
+                  </p>
                 </div>
               ))}
             </div>
@@ -152,7 +165,7 @@ function PrescriptionCard({
     setTimeout(() => setReordered(false), 2000)
   }
 
-  const daysLeft = Math.ceil((new Date(prx.expiryDate).getTime() - Date.now()) / 86400000)
+  const daysLeft = prx.expiryDate ? Math.ceil((new Date(prx.expiryDate).getTime() - Date.now()) / 86400000) : 0
   const isExpiringSoon = status === 'valid' && daysLeft > 0 && daysLeft <= 30
 
   return (
@@ -186,21 +199,25 @@ function PrescriptionCard({
 
       <div className="p-4 flex flex-col flex-1 gap-3">
         <p className="text-[10px] font-mono text-slate-400 truncate">{formatDisplayId(prx._id, 'RX')}</p>
-        <p className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug">{prx.diagnosis}</p>
+        <p className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug">{prx.diagnosis || '---'}</p>
 
         <div className="flex flex-col gap-1.5 text-xs text-slate-500">
           <div className="flex items-center gap-1.5">
             <Stethoscope className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <span className="truncate">{prx.doctorName} · {prx.doctorSpecialty}</span>
+            <span className="truncate">🩺 Bác sĩ: {prx.doctorName || '---'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Hospital className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <span className="truncate">🏥 Viện: {prx.hospital || '---'}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <span>Cấp: {fmt(prx.issuedDate)}</span>
+            <span>📅 Cấp: {fmt(prx.issueDate || prx.issuedDate) || '---'}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <span className={status === 'expired' ? 'text-slate-400 line-through' : isExpiringSoon ? 'text-orange-600 font-medium' : ''}>
-              HSD: {fmt(prx.expiryDate)}
+              ⏳ HSD: {fmt(prx.expiryDate) || '---'}
             </span>
           </div>
         </div>

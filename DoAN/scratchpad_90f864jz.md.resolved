@@ -1,0 +1,8 @@
+# Verification Plan
+- [x] Navigate to http://localhost:5173/products and verify the page loads correctly (Opened, loaded successfully after a retry click)
+- [x] Inspect sidebar filters for LOẠI THUỐC (Vitamin & TPCN, Chăm sóc cá nhân, Thiết bị y tế) (All beautiful new types render correctly: Vitamin & TPCN [3], Chăm sóc cá nhân [2], Thiết bị y tế [3])
+- [x] Inspect sidebar filters for DẠNG BÀO CHẾ (Viên sủi) (Viên nén / Viên sủi has 9 products, showing combined count correctly)
+- [x] Test filter reactivity by clicking some checkboxes (Clicked 'Vitamin & TPCN' and 'Viên nén / Viên sủi', filtered successfully to 'Vitamin C 1000mg' [effervescent, 1 product])
+- [x] Capture screenshots of the rendered sidebar and results (Captured to filtered_products_success.png)
+
+

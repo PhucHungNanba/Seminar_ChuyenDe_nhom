@@ -16,3 +16,23 @@ exports.verifyToken = (req, res, next) => {
     res.status(403).json({ success: false, message: 'Invalid or expired token', code: 403 });
   }
 };
+
+exports.verifyAdminOrPharmacist = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+  if (req.user.role === 'Admin' || req.user.role === 'Pharmacist') {
+    return next();
+  }
+  return res.status(403).json({ success: false, message: 'Forbidden: Admin or Pharmacist only' });
+};
+
+exports.verifyCustomer = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+  if (req.user.role === 'Customer' || req.user.role === 'Admin' || req.user.role === 'Pharmacist') {
+    return next();
+  }
+  return res.status(403).json({ success: false, message: 'Forbidden: Customer only' });
+};

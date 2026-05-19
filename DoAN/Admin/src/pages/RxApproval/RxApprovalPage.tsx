@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Eye, X, CheckCircle, XCircle, Plus, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Search, Eye, X, Plus, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDisplayId } from '../../utils/formatHelpers';
@@ -37,7 +37,7 @@ export default function RxApprovalPage() {
     const fetchCatalog = async () => {
       if (catalogSearch.length > 1) {
         try {
-          const res: any = await axiosClient.get(`/products?q=${catalogSearch}`);
+          const res: any = await axiosClient.get(`/products?search=${catalogSearch}`);
           setCatalog(res.data || res || []);
         } catch (error) {
           console.error('Error fetching catalog:', error);
@@ -55,7 +55,7 @@ export default function RxApprovalPage() {
   const filteredRequests = requests.filter(req => {
     const searchLower = searchTerm.toLowerCase();
     const idMatch = req._id?.toLowerCase().includes(searchLower);
-    const codeMatch = req.prescriptionCode?.toLowerCase().includes(searchLower);
+    const codeMatch = (req.requestCode || req.prescriptionCode || '')?.toLowerCase().includes(searchLower);
     const phoneMatch = req.customerPhone?.includes(searchTerm);
     return idMatch || codeMatch || phoneMatch;
   });
@@ -114,9 +114,9 @@ export default function RxApprovalPage() {
               {filteredRequests.map((req) => (
                 <tr key={req._id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
                   <td className="p-4 font-medium text-blue-600">
-                    {req.prescriptionCode || formatDisplayId(req._id, 'RX')}
+                    {req.requestCode || req.prescriptionCode || formatDisplayId(req._id, 'RX')}
                   </td>
-                  <td className="p-4 text-gray-600">{new Date(req.submittedAt).toLocaleString('vi-VN')}</td>
+                  <td className="p-4 text-gray-600">{new Date(req.createdAt || req.submittedAt).toLocaleString('vi-VN')}</td>
                   <td className="p-4 text-gray-800">{req.customerPhone}</td>
                   <td className="p-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[req.status] || STATUS_COLORS.PENDING}`}>
@@ -178,7 +178,7 @@ export default function RxApprovalPage() {
                   <motion.img 
                     animate={{ scale: zoomLevel }}
                     transition={{ type: 'tween', duration: 0.2 }}
-                    src={selectedRequest.imageUrl} 
+                    src={selectedRequest.thumbnailUrl || selectedRequest.imageUrl} 
                     alt="Prescription" 
                     className="max-w-full h-auto rounded shadow-sm origin-center"
                     draggable={false}
@@ -190,7 +190,7 @@ export default function RxApprovalPage() {
                 <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
                   <div>
                     <h3 className="font-semibold text-gray-800 text-lg">PrescriptionBuilder</h3>
-                    <p className="text-sm text-gray-500">Yêu cầu: {selectedRequest.prescriptionCode || formatDisplayId(selectedRequest._id, 'RX')}</p>
+                    <p className="text-sm text-gray-500">Yêu cầu: {selectedRequest.requestCode || selectedRequest.prescriptionCode || formatDisplayId(selectedRequest._id, 'RX')}</p>
                   </div>
                   <button onClick={clearBuilder} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
                     <X className="w-6 h-6" />

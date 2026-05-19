@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from routers import analyze
+from routers import association_rules
 
 app = FastAPI(title="AI Service for Smart Medicine Shop")
 
@@ -14,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(analyze.router, prefix="/api/ai", tags=["AI Analysis"])
+app.include_router(association_rules.router, prefix="/api/ai", tags=["Association Rules"])
 
 @app.get("/health")
 def health_check():

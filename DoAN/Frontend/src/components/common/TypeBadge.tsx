@@ -1,6 +1,6 @@
-// Reusable OTC / Rx type badge — used in CartItem, MedicineDetail, ProductCard, OrderDetail
+// Reusable type badge — used in CartItem, MedicineDetail, ProductCard, OrderDetail
 interface Props {
-  type: 'otc' | 'rx'
+  type: 'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device'
   size?: 'sm' | 'md'
 }
 
@@ -15,6 +15,36 @@ export default function TypeBadge({ type, size = 'sm' }: Props) {
       <span className={`${base} bg-emerald-100 text-emerald-700 border border-emerald-300`}>
         <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
         Thuốc Không Kê Đơn
+      </span>
+    )
+  }
+
+  // Vitamin & TPCN - purple
+  if (type === 'vitamin') {
+    return (
+      <span className={`${base} bg-purple-100 text-purple-700 border border-purple-300`}>
+        <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+        Vitamin & TPCN
+      </span>
+    )
+  }
+
+  // Personal Care - cyan
+  if (type === 'personal_care') {
+    return (
+      <span className={`${base} bg-cyan-100 text-cyan-700 border border-cyan-300`}>
+        <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
+        Chăm sóc cá nhân
+      </span>
+    )
+  }
+
+  // Medical Device - amber
+  if (type === 'medical_device') {
+    return (
+      <span className={`${base} bg-amber-100 text-amber-700 border border-amber-300`}>
+        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+        Thiết bị y tế
       </span>
     )
   }

@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowLeft, ShoppingCart, Star, Package,
+  ArrowLeft, ShoppingCart, Package,
   AlertTriangle, CheckCircle2, Minus, Plus, AlertCircle, MapPin, Search, ChevronRight
 } from 'lucide-react'
 import axiosClient from '../../api/axiosClient'
 import { Product, AssociationRule } from '../../types'
 import { useCartStore } from '../../store/cartStore'
+import { useAuthStore } from '../../store/authStore'
 import TypeBadge from '../../components/common/TypeBadge'
 import FrequentlyBoughtTogether from '../../components/common/FrequentlyBoughtTogether'
+import PrescriptionUploader from '../../components/cart/PrescriptionUploader'
+import { formatDisplayId } from '../../utils/formatHelpers'
 
 const MOCK_PHARMACIES = [
   { id: 1, name: 'Nhà thuốc PharmaCare Quận 5', address: '123 An Dương Vương, P.8, Quận 5', distance: '1.2 km' },
@@ -44,28 +47,12 @@ function SimpleText({ text }: { text: string }) {
   )
 }
 
-function StarRating({ rating, count }: { rating: number; count: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <Star
-            key={s}
-            className={`w-4 h-4 ${s <= Math.round(rating)
-              ? 'text-amber-400 fill-amber-400'
-              : 'text-slate-200 fill-slate-200'}`}
-          />
-        ))}
-      </div>
-      <span className="text-sm font-semibold text-slate-700">{rating}</span>
-      <span className="text-xs text-slate-400">({count.toLocaleString()} đánh giá)</span>
-    </div>
-  )
-}
+
 
 export default function MedicineDetailPage() {
   const { id } = useParams<{ id: string }>()
   const addItem = useCartStore((s) => s.addItem)
+  const { user } = useAuthStore()
 
   const [medicine, setMedicine] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -75,6 +62,13 @@ export default function MedicineDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('ingredients')
   const [qty, setQty] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
+  const [rxContactPhone, setRxContactPhone] = useState(user?.fullName ? '' : '')
+  const [rxSymptomsNote, setRxSymptomsNote] = useState('')
+  const [rxDoctorName, setRxDoctorName] = useState('')
+  const [rxHospital, setRxHospital] = useState('')
+  const [rxDiagnosis, setRxDiagnosis] = useState('')
+  const [rxIssueDate, setRxIssueDate] = useState('')
+  const [rxRequestError, setRxRequestError] = useState('')
 
   const [showInventory, setShowInventory] = useState(false)
   const [locationLoaded, setLocationLoaded] = useState(false)
@@ -100,12 +94,12 @@ export default function MedicineDetailPage() {
       if (!id) return
       setRulesLoading(true)
       try {
-        // Tạm gọi API giả định cho AI service, điều chỉnh theo thực tế
-        const response = await axiosClient.get(`/association-rules/recommendations?productId=${id}`)
-        const data = response.data?.data || response.data || []
-        setRules(data)
+        const response = await axiosClient.get(`/association-rules/recommend?productId=${id}`)
+        const data = response.data || response || []
+        setRules(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error("Lỗi khi lấy gợi ý:", error)
+        setRules([])
       } finally {
         setRulesLoading(false)
       }
@@ -135,8 +129,6 @@ export default function MedicineDetailPage() {
 
   const imgUrl = (medicine.images && medicine.images.length > 0) ? medicine.images[0] : 'https://placehold.co/320x320/e2e8f0/64748b?text=No+Image'
   const inStock = medicine.stock_quantity ? medicine.stock_quantity > 0 : true
-  const finalRating = medicine.rating || 5.0
-  const finalReviewCount = medicine.reviewCount || 0
 
   function handleAddToCart() {
     addItem({
@@ -216,11 +208,12 @@ export default function MedicineDetailPage() {
               {' · '}
               <span>{medicine.manufacturer}</span>
             </p>
+            <p className="text-xs text-slate-400 mt-2 font-mono">
+              Mã sản phẩm: {medicine.productCode || formatDisplayId(medicine._id, 'MED')}
+            </p>
           </div>
 
           <TypeBadge type={medicine.type} size="md" />
-
-          <StarRating rating={finalRating} count={finalReviewCount} />
 
           <div className="flex items-end gap-3">
             <p className="text-3xl font-bold text-sky-600">
@@ -265,69 +258,237 @@ export default function MedicineDetailPage() {
           </div>
 
           <div className="flex items-center gap-3 mt-2">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200
-                            rounded-full px-2 py-1.5">
-              <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-full
-                           hover:bg-slate-200 text-slate-600 transition-colors"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="text-base font-bold text-slate-700 w-7 text-center">
-                {qty}
-              </span>
-              <button
-                onClick={() => setQty((q) => q + 1)}
-                className="w-8 h-8 flex items-center justify-center rounded-full
-                           hover:bg-sky-100 text-sky-600 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
+            {medicine.type === 'rx' ? (
+              <div className="w-full flex flex-col gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="md:col-span-1">
+                    <label htmlFor="rx-contact-phone" className="text-sm font-semibold text-slate-700">
+                      Số điện thoại liên hệ
+                    </label>
+                    <input
+                      id="rx-contact-phone"
+                      type="tel"
+                      value={rxContactPhone}
+                      onChange={(e) => {
+                        setRxContactPhone(e.target.value)
+                        if (rxRequestError) setRxRequestError('')
+                      }}
+                      placeholder="VD: 0912345678"
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label htmlFor="rx-symptoms-note" className="text-sm font-semibold text-slate-700">
+                      Triệu chứng/ghi chú thêm
+                    </label>
+                    <textarea
+                      id="rx-symptoms-note"
+                      value={rxSymptomsNote}
+                      onChange={(e) => setRxSymptomsNote(e.target.value)}
+                      placeholder="Mô tả triệu chứng, dị ứng thuốc, lưu ý cho dược sĩ..."
+                      rows={3}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm resize-none
+                                 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300"
+                    />
+                  </div>
 
-            <motion.button
-              id="btn-add-to-cart"
-              onClick={handleAddToCart}
-              disabled={!inStock}
-              whileTap={{ scale: 0.96 }}
-              className={`flex-1 flex items-center justify-center gap-2 py-4 px-8
-                          rounded-full font-bold text-[15px] transition-all
-                          ${addedToCart
-                            ? 'bg-emerald-500 text-white'
-                            : inStock
-                              ? 'bg-black text-white hover:bg-slate-800'
-                              : 'bg-[#f5f5f7] text-slate-400 cursor-not-allowed'
-                          }`}
-            >
-              <AnimatePresence mode="wait">
-                {addedToCart ? (
-                  <motion.span
-                    key="added"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Đã thêm vào giỏ!
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="add"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center gap-2"
-                  >
-                    {medicine.type === 'rx'
-                      ? <AlertCircle className="w-4 h-4" />
-                      : <ShoppingCart className="w-4 h-4" />
+                  {/* Doctor Info */}
+                  <div className="md:col-span-1">
+                    <label htmlFor="rx-doctor-name" className="text-sm font-semibold text-slate-700">
+                      Tên Bác sĩ (Tùy chọn)
+                    </label>
+                    <input
+                      id="rx-doctor-name"
+                      type="text"
+                      value={rxDoctorName}
+                      onChange={(e) => setRxDoctorName(e.target.value)}
+                      placeholder="Bác sĩ kê đơn"
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label htmlFor="rx-hospital" className="text-sm font-semibold text-slate-700">
+                      Tên Bệnh viện (Tùy chọn)
+                    </label>
+                    <input
+                      id="rx-hospital"
+                      type="text"
+                      value={rxHospital}
+                      onChange={(e) => setRxHospital(e.target.value)}
+                      placeholder="Bệnh viện / Phòng khám"
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300"
+                    />
+                  </div>
+
+                  {/* Diagnosis & Issue Date */}
+                  <div className="md:col-span-1">
+                    <label htmlFor="rx-diagnosis" className="text-sm font-semibold text-slate-700">
+                      Chẩn đoán bệnh (Tùy chọn)
+                    </label>
+                    <input
+                      id="rx-diagnosis"
+                      type="text"
+                      value={rxDiagnosis}
+                      onChange={(e) => setRxDiagnosis(e.target.value)}
+                      placeholder="VD: Viêm họng cấp..."
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label htmlFor="rx-issue-date" className="text-sm font-semibold text-slate-700">
+                      Ngày cấp đơn (Tùy chọn)
+                    </label>
+                    <input
+                      id="rx-issue-date"
+                      type="date"
+                      value={rxIssueDate}
+                      onChange={(e) => setRxIssueDate(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300"
+                    />
+                  </div>
+                </div>
+
+                {rxRequestError ? (
+                  <p className="text-sm text-rose-600 font-medium">{rxRequestError}</p>
+                ) : null}
+
+                <PrescriptionUploader
+                  mode="request"
+                  productName={medicine.name}
+                  onSubmit={async (payload) => {
+                    const normalizedPhone = rxContactPhone.trim().replace(/\s+/g, '')
+                    const validPhone = /^(0|\+84)\d{9,10}$/.test(normalizedPhone)
+                    if (!validPhone) {
+                      setRxRequestError('Vui lòng nhập số điện thoại hợp lệ trước khi gửi yêu cầu.')
+                      return false
                     }
-                    {medicine.type === 'rx' ? 'Thêm & Cung cấp Đơn thuốc' : 'Thêm vào giỏ hàng'}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
+                    if (!user) {
+                      setRxRequestError('Bạn cần đăng nhập để gửi yêu cầu kê đơn.')
+                      return false
+                    }
+                    setRxRequestError('')
+                    try {
+                      const formData = new FormData()
+                      formData.append('customerPhone', normalizedPhone)
+                      if (rxSymptomsNote) {
+                        formData.append('pharmacistNote', rxSymptomsNote)
+                      }
+                      if (payload.file) {
+                        formData.append('image', payload.file)
+                      } else {
+                        formData.append('thumbnailUrl', payload.fileUrl)
+                      }
+
+                      // Append new optional fields
+                      if (rxDoctorName.trim()) {
+                        formData.append('doctorName', rxDoctorName.trim())
+                      }
+                      if (rxHospital.trim()) {
+                        formData.append('hospital', rxHospital.trim())
+                      }
+                      if (rxDiagnosis.trim()) {
+                        formData.append('diagnosis', rxDiagnosis.trim())
+                      }
+                      if (rxIssueDate) {
+                        formData.append('issueDate', rxIssueDate)
+                      }
+
+                      // Link current product information to prescription request
+                      const reqMedicines = [
+                        {
+                          productId: medicine._id,
+                          name: medicine.name,
+                          quantity: qty,
+                          price: medicine.price,
+                        },
+                      ]
+                      formData.append('medicines', JSON.stringify(reqMedicines))
+
+                      await axiosClient.post('/orders/prescriptions', formData, {
+                        headers: {
+                          'Content-Type': 'multipart/form-data',
+                        },
+                      })
+                      return true
+                    } catch (err: any) {
+                      const msg = err?.response?.data?.message || err?.message || 'Gửi yêu cầu thất bại'
+                      setRxRequestError(msg)
+                      return false
+                    }
+                  }}
+                  buttonLabel="Gửi yêu cầu kê đơn"
+                  disabled={!inStock}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200
+                                rounded-full px-2 py-1.5">
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="w-8 h-8 flex items-center justify-center rounded-full
+                               hover:bg-slate-200 text-slate-600 transition-colors"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="text-base font-bold text-slate-700 w-7 text-center">
+                    {qty}
+                  </span>
+                  <button
+                    onClick={() => setQty((q) => q + 1)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full
+                               hover:bg-sky-100 text-sky-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <motion.button
+                  id="btn-add-to-cart"
+                  onClick={handleAddToCart}
+                  disabled={!inStock}
+                  whileTap={{ scale: 0.96 }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 px-8
+                              rounded-full font-bold text-[15px] transition-all
+                              ${addedToCart
+                                ? 'bg-emerald-500 text-white'
+                                : inStock
+                                  ? 'bg-black text-white hover:bg-slate-800'
+                                  : 'bg-[#f5f5f7] text-slate-400 cursor-not-allowed'
+                              }`}
+                >
+                  <AnimatePresence mode="wait">
+                    {addedToCart ? (
+                      <motion.span
+                        key="added"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Đã thêm vào giỏ!
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="add"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center gap-2"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Thêm vào giỏ hàng
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              </>
+            )}
           </div>
 
           <div className="mt-4 border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm">

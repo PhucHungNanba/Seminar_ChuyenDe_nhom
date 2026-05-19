@@ -1,3 +1,41 @@
-__pycache__
-venv
+# Dependency directories
+node_modules/
+**/node_modules/
+jspm_packages/
+
+# Python / AI Service
+venv/
+__pycache__/
+*.pyc
+
+# Env files (CỰC KỲ QUAN TRỌNG)
 .env
+.env.local
+.env.*
+*.env
+
+# Build outputs
+dist/
+build/
+.next/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Bỏ qua lịch sử Git (Thư mục này cực kỳ nặng, Docker không cần biết lịch sử code)
+.git/
+.gitignore
+
+# Bỏ qua các file cấu hình IDE/Editor của cá nhân
+.vscode/
+.idea/
+
+# Bỏ qua chính các file của Docker (Không cần copy chúng vào bên trong Container)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Bỏ qua các tài liệu markdown không cần thiết cho lúc chạy
+*.md
+docs/

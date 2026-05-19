@@ -2,7 +2,6 @@ import { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Pill, Phone, Mail, MapPin, Share2, PlayCircle } from 'lucide-react'
 import Navbar from './Navbar'
-import PharmacistLiveChat from '../chat/PharmacistLiveChat'
 import RecommendedItemsModal from '../cart/RecommendedItemsModal'
 
 interface Props {
@@ -102,9 +101,6 @@ export default function MainLayout({ children }: Props) {
           </div>
         </div>
       </footer>
-
-      {/* ── Chat Widget ── */}
-      <PharmacistLiveChat />
       
       {/* ── Cross-sell Modal ── */}
       <RecommendedItemsModal />

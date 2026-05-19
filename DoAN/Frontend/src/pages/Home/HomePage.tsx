@@ -6,21 +6,17 @@ import {
   ShoppingBag,
   Stethoscope,
   ArrowRight,
-  Star,
   ShoppingCart,
   Pill,
   Activity,
   BadgeCheck,
-  Package,
   ChevronRight,
   Lock,
   Zap,
   Heart,
-  Eye,
 } from 'lucide-react'
 import { useFeaturedStore, type FeaturedProduct } from '../../store/featuredStore'
 import { useCartStore } from '../../store/cartStore'
-import TypeBadge from '../../components/common/TypeBadge'
 import { useState } from 'react'
 import QuickPrescriptionModal from '../../components/home/QuickPrescriptionModal'
 
@@ -137,7 +133,7 @@ function HeroBanner() {
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
-            to="/orders/ORD-001"
+            to="/orders"
             id="hero-cta-track"
             className="inline-flex items-center gap-2 border-2 border-white/50 text-white font-semibold px-7 py-3.5 rounded-xl hover:bg-white/10 transition-all duration-300"
           >
@@ -318,21 +314,6 @@ function CategoryGrid() {
 // ════════════════════════════════════════════════════════════════════════════
 // Section 3 — FeaturedProducts
 // ════════════════════════════════════════════════════════════════════════════
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <Star
-          key={s}
-          className="w-3.5 h-3.5"
-          fill={s <= Math.round(rating) ? '#f59e0b' : 'none'}
-          stroke={s <= Math.round(rating) ? '#f59e0b' : '#94a3b8'}
-        />
-      ))}
-    </div>
-  )
-}
-
 function ProductCard({ product, index }: { product: FeaturedProduct; index: number }) {
   const addItem = useCartStore((s) => s.addItem)
   const [added, setAdded] = useState(false)
@@ -357,6 +338,8 @@ function ProductCard({ product, index }: { product: FeaturedProduct; index: numb
     'Mới': { bg: '#ede9fe', text: '#7c3aed' },
     'Sale': { bg: '#fee2e2', text: '#dc2626' },
   }
+
+  const inStock = (product.stock_quantity ?? product.quantity ?? 0) > 0
 
   return (
     <motion.div
@@ -393,7 +376,7 @@ function ProductCard({ product, index }: { product: FeaturedProduct; index: numb
           </span>
         )}
         {/* Stock badge */}
-        {!product.inStock && (
+        {!inStock && (
           <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
             <span className="bg-slate-700 text-white text-xs font-semibold px-3 py-1 rounded-full">
               Hết hàng
@@ -404,13 +387,7 @@ function ProductCard({ product, index }: { product: FeaturedProduct; index: numb
 
       {/* Content */}
       <div className="p-3 flex flex-col flex-1 text-left">
-        {/* Type & Rating */}
-        <div className="flex items-center justify-end mb-2">
-          <div className="flex items-center gap-1 text-xs font-medium text-slate-500">
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            {product.rating}
-          </div>
-        </div>
+        <div className="h-2" />
 
         {/* Title */}
         <Link
@@ -448,7 +425,7 @@ function ProductCard({ product, index }: { product: FeaturedProduct; index: numb
                 }
                 handleAdd()
               }}
-              disabled={!product.inStock}
+              disabled={!inStock}
               whileTap={{ scale: 0.98 }}
               className="w-full py-2 rounded-lg text-sm font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >

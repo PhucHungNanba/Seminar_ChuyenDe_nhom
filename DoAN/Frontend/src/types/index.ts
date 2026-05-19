@@ -1,4 +1,4 @@
-export type ProductForm = 'tablet' | 'liquid' | 'capsule' | 'device';
+export type ProductForm = 'tablet' | 'liquid' | 'capsule' | 'device' | 'effervescent';
 
 export interface TabContent {
   ingredients: string;
@@ -9,18 +9,17 @@ export interface TabContent {
 
 export interface Product {
   _id: string;
+  productCode?: string;
   categoryId: string;
   name: string;
   genericName: string;
   manufacturer: string;
-  type: 'otc' | 'rx';
+  type: 'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device';
   form: ProductForm;
   price: number;
   unit: string;
   images: string[];
   description: string;
-  rating: number;
-  reviewCount: number;
   tags: string[];
   badge?: string;
   tabs: TabContent;
@@ -48,6 +47,7 @@ export interface SavedPrescription {
   _id: string;
   prescriptionCode: string;
   issuedDate: string;
+  issueDate?: string;
   expiryDate: string;
   doctorName: string;
   doctorSpecialty: string;
@@ -63,7 +63,7 @@ export interface AssociationRuleProduct {
   name: string;
   images: string[];
   price: number;
-  type: 'otc' | 'rx';
+  type: 'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device';
 }
 
 export interface AssociationRule {

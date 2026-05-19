@@ -53,20 +53,6 @@ services:
     networks:
       - medicine-network
 
-  ai-service:
-    build:
-      context: ./Backend/ai-service
-    container_name: ai-service
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./Backend/ai-service:/app
-      - /app/__pycache__
-    networks:
-      - medicine-network
-    profiles:
-      - dont-start # Profile này giúp service không tự động chạy khi dùng lệnh docker-compose up -d thông thường
-
   frontend:
     build:
       context: ./Frontend

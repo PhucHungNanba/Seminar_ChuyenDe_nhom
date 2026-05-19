@@ -12,14 +12,11 @@ import {
   SlidersHorizontal,
   X,
   ShoppingCart,
-  Package,
-  Star,
   ChevronDown,
   Filter,
   ArrowUpDown,
   RotateCcw,
   AlertCircle,
-  Eye,
 } from 'lucide-react'
 import { type Product, type ProductForm } from '../../types'
 import { useCartStore } from '../../store/cartStore'
@@ -29,25 +26,25 @@ import { formatDisplayId } from '../../utils/formatHelpers'
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & constants
 // ─────────────────────────────────────────────────────────────────────────────
-type SortKey = 'default' | 'price_asc' | 'price_desc' | 'rating_desc' | 'name_asc'
+type SortKey = 'default' | 'price_asc' | 'price_desc' | 'name_asc'
 
 interface Filters {
-  types: Set<'otc' | 'rx'>
+  types: Set<'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device'>
   forms: Set<ProductForm>
 }
 
 const FORM_LABELS: Record<ProductForm, string> = {
   tablet: 'Viên nén / Viên sủi',
+  effervescent: 'Viên nén / Viên sủi',
   capsule: 'Viên nang',
   liquid: 'Dạng nước / Siro',
-  device: 'Thiết bị y tế',
+  device: 'Dụng cụ / Thiết bị',
 }
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'default', label: 'Mặc định' },
   { value: 'price_asc', label: 'Giá: Thấp → Cao' },
   { value: 'price_desc', label: 'Giá: Cao → Thấp' },
-  { value: 'rating_desc', label: 'Đánh giá cao nhất' },
   { value: 'name_asc', label: 'Tên A → Z' },
 ]
 
@@ -56,24 +53,6 @@ const BADGE_STYLE: Record<string, { bg: string; text: string }> = {
   'Yêu thích': { bg: '#fce7f3', text: '#db2777' },
   'Mới': { bg: '#ede9fe', text: '#7c3aed' },
   'Sale': { bg: '#fee2e2', text: '#dc2626' },
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// StarRating (mini)
-// ─────────────────────────────────────────────────────────────────────────────
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <Star
-          key={s}
-          className="w-3 h-3"
-          fill={s <= Math.round(rating) ? '#f59e0b' : 'none'}
-          stroke={s <= Math.round(rating) ? '#f59e0b' : '#94a3b8'}
-        />
-      ))}
-    </div>
-  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,12 +79,8 @@ function ProductCard({ product }: { product: Product }) {
     setTimeout(() => setAdded(false), 1800)
   }
 
-  // Fallback rating
-  const finalRating = product.rating || 5.0
-  const finalReviewCount = product.reviewCount || 0
-  
   // Tính inStock dựa vào field tồn kho
-  const inStock = product.stock_quantity ? product.stock_quantity > 0 : true
+  const inStock = (product.stock_quantity ?? 0) > 0
 
   return (
     <motion.div
@@ -156,7 +131,7 @@ function ProductCard({ product }: { product: Product }) {
             {FORM_LABELS[product.form] || product.form}
           </span>
           <span className="text-[10px] text-gray-400 font-mono">
-            {formatDisplayId(product._id, 'MED')}
+            {product.productCode || formatDisplayId(product._id, 'MED')}
           </span>
         </div>
 
@@ -169,13 +144,6 @@ function ProductCard({ product }: { product: Product }) {
         </Link>
         <p className="text-xs text-slate-400 mb-1">{product.manufacturer}</p>
         <p className="text-xs text-slate-500 line-clamp-2 mb-3 flex-1">{product.description}</p>
-
-        <div className="flex items-center gap-1.5 mb-3">
-          <StarRating rating={finalRating} />
-          <span className="text-xs text-slate-400">
-            {finalRating} ({finalReviewCount.toLocaleString()})
-          </span>
-        </div>
 
         <div className="flex flex-col mt-auto pt-3 gap-3">
           <div>
@@ -273,7 +241,7 @@ function SidebarContent({
   products,
 }: {
   filters: Filters
-  onToggleType: (t: 'otc' | 'rx') => void
+  onToggleType: (t: 'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device') => void
   onToggleForm: (f: ProductForm) => void
   onReset: () => void
   products: Product[]
@@ -281,8 +249,13 @@ function SidebarContent({
   const hasActive =
     filters.types.size > 0 || filters.forms.size > 0
 
-  const countType = (t: 'otc' | 'rx') => products.filter((p) => p.type === t).length
-  const countForm = (f: ProductForm) => products.filter((p) => p.form === f).length
+  const countType = (t: 'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device') => products.filter((p) => p.type === t).length
+  const countForm = (f: ProductForm) => {
+    if (f === 'tablet') {
+      return products.filter((p) => p.form === 'tablet' || p.form === 'effervescent').length
+    }
+    return products.filter((p) => p.form === f).length
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -330,6 +303,27 @@ function SidebarContent({
             checked={filters.types.has('rx')}
             onChange={() => onToggleType('rx')}
             count={countType('rx')}
+          />
+          <CheckboxItem
+            id="filter-type-vitamin"
+            label="Vitamin & TPCN"
+            checked={filters.types.has('vitamin')}
+            onChange={() => onToggleType('vitamin')}
+            count={countType('vitamin')}
+          />
+          <CheckboxItem
+            id="filter-type-personal-care"
+            label="Chăm sóc cá nhân"
+            checked={filters.types.has('personal_care')}
+            onChange={() => onToggleType('personal_care')}
+            count={countType('personal_care')}
+          />
+          <CheckboxItem
+            id="filter-type-medical-device"
+            label="Thiết bị y tế"
+            checked={filters.types.has('medical_device')}
+            onChange={() => onToggleType('medical_device')}
+            count={countType('medical_device')}
           />
         </div>
       </div>
@@ -442,19 +436,19 @@ export default function ProductsPage() {
   const [searchParams] = useSearchParams()
   useEffect(() => {
     const q    = searchParams.get('q')
-    const type = searchParams.get('type') as 'otc' | 'rx' | null
+    const type = searchParams.get('type')
     const form = searchParams.get('form') as ProductForm | null
 
     if (q) setQuery(q)
-    if (type && (type === 'otc' || type === 'rx')) {
-      setFilters((prev) => ({ ...prev, types: new Set([type]) }))
+    if (type && ['otc', 'rx', 'vitamin', 'personal_care', 'medical_device'].includes(type)) {
+      setFilters((prev) => ({ ...prev, types: new Set([type as any]) }))
     }
-    if (form && ['tablet','capsule','liquid','device'].includes(form)) {
+    if (form && ['tablet','capsule','liquid','device','effervescent'].includes(form)) {
       setFilters((prev) => ({ ...prev, forms: new Set([form]) }))
     }
   }, [searchParams])
 
-  const toggleType = useCallback((t: 'otc' | 'rx') => {
+  const toggleType = useCallback((t: 'otc' | 'rx' | 'vitamin' | 'personal_care' | 'medical_device') => {
     setFilters((prev) => {
       const next = new Set(prev.types)
       next.has(t) ? next.delete(t) : next.add(t)
@@ -493,7 +487,12 @@ export default function ProductsPage() {
     }
 
     if (filters.forms.size > 0) {
-      list = list.filter((p) => filters.forms.has(p.form))
+      list = list.filter((p) => {
+        if (filters.forms.has('tablet') && (p.form === 'tablet' || p.form === 'effervescent')) {
+          return true
+        }
+        return filters.forms.has(p.form)
+      })
     }
 
     const sorted = [...list]
@@ -503,9 +502,6 @@ export default function ProductsPage() {
         break
       case 'price_desc':
         sorted.sort((a, b) => (b.price || 0) - (a.price || 0))
-        break
-      case 'rating_desc':
-        sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
         break
       case 'name_asc':
         sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'))
@@ -631,7 +627,7 @@ export default function ProductsPage() {
                   onClick={() => toggleType(t)}
                   className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-sky-100 text-sky-700 hover:bg-red-100 hover:text-red-600 transition-colors"
                 >
-                  {t === 'otc' ? 'OTC' : 'Kê đơn (Rx)'}
+                  {t === 'otc' ? 'OTC' : t === 'rx' ? 'Kê đơn (Rx)' : t === 'vitamin' ? 'Vitamin & TPCN' : t === 'personal_care' ? 'Chăm sóc cá nhân' : 'Thiết bị y tế'}
                   <X className="w-3 h-3" />
                 </button>
               ))}

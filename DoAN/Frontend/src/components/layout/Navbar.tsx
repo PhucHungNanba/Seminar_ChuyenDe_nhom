@@ -181,7 +181,7 @@ export default function Navbar() {
                   <div className="p-2">
                     <Link to="/profile" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Hồ sơ cá nhân</Link>
                     <Link to="/orders" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Đơn hàng của tôi</Link>
-                    <button 
+                    <button
                       onClick={() => {
                         logout();
                         navigate('/');
@@ -237,9 +237,7 @@ export default function Navbar() {
             { label: 'Tất cả thuốc', to: '/products' },
             { label: 'Thuốc OTC', to: '/products?type=otc' },
             { label: 'Thuốc Rx', to: '/products?type=rx' },
-            { label: 'Vitamin & TPCN', to: '/products?cat=vitamin' },
-            { label: 'Chăm sóc cá nhân', to: '/products?cat=personal' },
-            { label: 'Theo dõi đơn hàng', to: '/orders/ORD-001' },
+            { label: 'Theo dõi đơn hàng', to: '/orders' },
           ].map((item) => (
             <Link
               key={item.to}
@@ -269,7 +267,7 @@ export default function Navbar() {
                 { label: '🟢 Thuốc OTC', to: '/products?type=otc' },
                 { label: '🟡 Thuốc Rx (kê đơn)', to: '/products?type=rx' },
                 { label: '🌿 Vitamin & TPCN', to: '/products?cat=vitamin' },
-                { label: '📦 Theo dõi đơn hàng', to: '/orders/ORD-001' },
+                { label: '📦 Theo dõi đơn hàng', to: '/orders' },
                 { label: '👤 Tài khoản', to: '/profile' },
               ].map((item) => (
                 <Link
