@@ -25,7 +25,7 @@ productSchema.index({ symptomTags: 1 });
 productSchema.index({ type: 1 });
 productSchema.index({ productCode: 1 });
 
-productSchema.pre('save', async function(next) {
+productSchema.pre('validate', async function(next) {
   if (this.productCode) {
     return next();
   }
