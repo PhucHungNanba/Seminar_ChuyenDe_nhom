@@ -12,7 +12,7 @@ describe('Auth API (TDD)', () => {
     const res = await request(app).post('/api/users/register').send(sampleUser);
     expect(res.statusCode).toEqual(201);
     expect(res.body.success).toBeTruthy();
-    expect(res.body.data.email).toBe(sampleUser.email);
+    expect(res.body.user.email).toBe(sampleUser.email);
   });
 
   it('2. POST /api/users/login - Nên đăng nhập thành công', async () => {
@@ -23,6 +23,6 @@ describe('Auth API (TDD)', () => {
     });
     expect(res.statusCode).toEqual(200);
     expect(res.body.success).toBeTruthy();
-    expect(res.body.data.token).toBeDefined();
+    expect(res.body.token).toBeDefined();
   });
 });
