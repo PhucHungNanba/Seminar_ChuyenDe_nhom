@@ -5,9 +5,6 @@ services:
     container_name: api-gateway
     ports:
       - "3000:3000"
-    volumes:
-      - ./Backend/api-gateway:/app
-      - /app/node_modules
     networks:
       - medicine-network
 
@@ -17,11 +14,14 @@ services:
     container_name: user-service
     ports:
       - "3001:3001"
-    env_file:
-      - ./Backend/user-service/.env
-    volumes:
-      - ./Backend/user-service:/app
-      - /app/node_modules
+    environment:
+      - MONGODB_URI=mongodb+srv://hoi321668_db_user:ppessWAOiuSL2lys@medicine.g3veeqn.mongodb.net/db_users?appName=medicine
+      - JWT_SECRET=SmartMedicineShop_JWT_Secret_2024
+      - PORT=3001
+      - CLOUDINARY_URL=cloudinary://273856488716346:aRGu_t97a3MGOYuDGrtT1iXKfac@dr7blo9il
+      - CLOUDINARY_CLOUD_NAME=dr7blo9il
+      - CLOUDINARY_API_KEY=273856488716346
+      - CLOUDINARY_API_SECRET=aRGu_t97a3MGOYuDGrtT1iXKfac
     networks:
       - medicine-network
 
@@ -31,11 +31,9 @@ services:
     container_name: product-service
     ports:
       - "3002:3002"
-    env_file:
-      - ./Backend/product-service/.env
-    volumes:
-      - ./Backend/product-service:/app
-      - /app/node_modules
+    environment:
+      - MONGODB_URI=mongodb+srv://hoi321668_db_user:ppessWAOiuSL2lys@medicine.g3veeqn.mongodb.net/db_products?appName=medicine
+      - PORT=3002
     networks:
       - medicine-network
 
@@ -45,11 +43,14 @@ services:
     container_name: order-service
     ports:
       - "3003:3003"
-    env_file:
-      - ./Backend/order-service/.env
-    volumes:
-      - ./Backend/order-service:/app
-      - /app/node_modules
+    environment:
+      - MONGODB_URI=mongodb+srv://hoi321668_db_user:ppessWAOiuSL2lys@medicine.g3veeqn.mongodb.net/db_orders?appName=medicine
+      - JWT_SECRET=SmartMedicineShop_JWT_Secret_2024
+      - PORT=3003
+      - CLOUDINARY_URL=cloudinary://273856488716346:aRGu_t97a3MGOYuDGrtT1iXKfac@dr7blo9il
+      - CLOUDINARY_CLOUD_NAME=dr7blo9il
+      - CLOUDINARY_API_KEY=273856488716346
+      - CLOUDINARY_API_SECRET=aRGu_t97a3MGOYuDGrtT1iXKfac
     networks:
       - medicine-network
 
@@ -61,9 +62,6 @@ services:
       - "5173:5173"
     env_file:
       - ./Frontend/.env
-    volumes:
-      - ./Frontend:/app
-      - /app/node_modules
     networks:
       - medicine-network
 
@@ -75,9 +73,6 @@ services:
       - "5174:5174"
     env_file:
       - ./Admin/.env
-    volumes:
-      - ./Admin:/app
-      - /app/node_modules
     networks:
       - medicine-network
 
