@@ -13,7 +13,7 @@ describe('Product API (TDD)', () => {
   };
 
   it('1. Nên tạo được một sản phẩm mới (POST /api/products)', async () => {
-    const res = await request(app).post('/api/products').send(sampleProduct);
+    const res = await request(app).post('/').send(sampleProduct);
     expect(res.statusCode).toEqual(201);
     expect(res.body.success).toBeTruthy();
     expect(res.body.data.name).toBe(sampleProduct.name);
@@ -21,7 +21,7 @@ describe('Product API (TDD)', () => {
 
   it('2. Nên lấy được danh sách sản phẩm (GET /api/products)', async () => {
     await Product.create(sampleProduct);
-    const res = await request(app).get('/api/products');
+    const res = await request(app).get('/');
     expect(res.statusCode).toEqual(200);
     expect(res.body.data.length).toBe(1);
   });
@@ -30,7 +30,7 @@ describe('Product API (TDD)', () => {
     await Product.create(sampleProduct);
     await Product.create({ ...sampleProduct, name: 'Thuốc dạ dày', symptomTags: ['đau dạ dày'] });
 
-    const res = await request(app).get('/api/products/search?tags=sốt');
+    const res = await request(app).get('/search?tags=sốt');
     expect(res.statusCode).toEqual(200);
     expect(res.body.data.length).toBe(1);
     expect(res.body.data[0].name).toBe('Panadol Extra');
@@ -40,12 +40,12 @@ describe('Product API (TDD)', () => {
     const product = await Product.create(sampleProduct);
     
     // Update
-    let res = await request(app).put(`/api/products/${product._id}`).send({ price: 70000 });
+    let res = await request(app).put(`/${product._id}`).send({ price: 70000 });
     expect(res.statusCode).toEqual(200);
     expect(res.body.data.price).toBe(70000);
 
     // Delete
-    res = await request(app).delete(`/api/products/${product._id}`);
+    res = await request(app).delete(`/${product._id}`);
     expect(res.statusCode).toEqual(200);
 
     // Verify deleted

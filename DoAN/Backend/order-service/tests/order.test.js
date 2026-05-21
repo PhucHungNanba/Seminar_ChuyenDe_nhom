@@ -11,8 +11,8 @@ describe('Order API (TDD)', () => {
   let adminToken;
 
   beforeAll(() => {
-    userToken = jwt.sign({ id: 'user123', role: 'user' }, 'super_secret_key');
-    adminToken = jwt.sign({ id: 'admin123', role: 'admin' }, 'super_secret_key');
+    userToken = jwt.sign({ id: 'user123', role: 'Customer' }, 'super_secret_key');
+    adminToken = jwt.sign({ id: 'admin123', role: 'Admin' }, 'super_secret_key');
   });
 
   afterEach(() => {
@@ -30,7 +30,7 @@ describe('Order API (TDD)', () => {
     });
 
     const res = await request(app)
-      .post('/api/orders')
+      .post('/')
       .set('Authorization', `Bearer ${userToken}`)
       .send(sampleOrderReq);
 
@@ -45,24 +45,24 @@ describe('Order API (TDD)', () => {
       items: [{ productId: 'prod1', quantity: 2, price: 50 }],
       totalAmount: 100,
       shippingAddress: '123 Main St',
-      status: 'pending'
+      status: 'UNPAID'
     });
 
     const res = await request(app)
-      .put(`/api/orders/${order._id}/status`)
+      .put(`/${order._id}/status`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ status: 'approved' });
+      .send({ status: 'PAID' });
 
     expect(res.statusCode).toEqual(200);
     expect(res.body.success).toBeTruthy();
-    expect(res.body.data.status).toBe('approved');
+    expect(res.body.data.status).toBe('PAID');
   });
 
   it('3. PUT /api/orders/:id/status - Báo lỗi nếu không phải Admin', async () => {
     const res = await request(app)
-      .put('/api/orders/some_id/status')
+      .put('/some_id/status')
       .set('Authorization', `Bearer ${userToken}`)
-      .send({ status: 'approved' });
+      .send({ status: 'PAID' });
 
     expect(res.statusCode).toEqual(403);
   });
