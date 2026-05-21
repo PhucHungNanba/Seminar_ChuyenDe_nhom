@@ -8,11 +8,11 @@ venv/
 __pycache__/
 *.pyc
 
-# Env files (CỰC KỲ QUAN TRỌNG)
-.env
-.env.local
-.env.*
-*.env
+# Env files (CỰC KỲ QUAN TRỌNG) - KHÔNG IGNORE để sharing configurations
+# .env
+# .env.local
+# .env.*
+# *.env
 
 # Build outputs
 dist/
